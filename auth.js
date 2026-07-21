@@ -1,13 +1,7 @@
-// ==========================================
-// Module: auth.js
-// Description: Firebase Authentication & User Profile Management
-// ==========================================
-
 import { 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
-  signOut, 
-  onAuthStateChanged 
+  signOut 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 import { 
@@ -16,134 +10,102 @@ import {
   getDoc 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// Global variables to hold authentication state and current user profile
-window.currentUser = null;
-window.userProfile = null;
+// Firebase instances from firebase.js
+const auth = window.firebaseAuth;
+const db = window.firebaseDB;
 
 /**
- * Save or update User Profile data in Firestore
- * Collection: "users" -> Document ID: user.uid
- */
-async function saveUserProfile(user, profileData) {
-  if (!user || !user.uid) return;
-  const userDocRef = doc(window.firebaseDB, "users", user.uid);
-  const dataToSave = {
-    company: profileData.company || "",
-    name: profileData.name || "",
-    empId: profileData.empId || "",
-    email: user.email,
-    updatedAt: new Date().toISOString()
-  };
-
-  await setDoc(userDocRef, dataToSave, { merge: true });
-  window.userProfile = dataToSave;
-}
-
-/**
- * Fetch User Profile data from Firestore
- */
-async function fetchUserProfile(uid) {
-  if (!uid) return null;
-  const userDocRef = doc(window.firebaseDB, "users", uid);
-  const docSnap = await getDoc(userDocRef);
-  if (docSnap.exists()) {
-    return docSnap.data();
-  }
-  return null;
-}
-
-/**
- * Main function to handle Auth Form submission (Login / Register)
+ * Handle Auth Submit (Login & Registration)
  */
 export async function handleAuthSubmit() {
+  const authCompany = document.getElementById("authCompany");
+  const authName = document.getElementById("authName");
+  const authEmpId = document.getElementById("authEmpId");
+  const authEmail = document.getElementById("authEmail");
+  const authPass = document.getElementById("authPass");
+  const authPassConfirm = document.getElementById("authPassConfirm");
   const authError = document.getElementById("authError");
   const authSubmitBtn = document.getElementById("authSubmitBtn");
-  
-  if (authError) authError.textContent = "";
 
-  const email = document.getElementById("authEmail")?.value.trim();
-  const pass = document.getElementById("authPass")?.value;
-  
-  const account = getAccount(); // Check local state/existing user mode
+  if (!authEmail || !authPass) return;
+
+  const email = authEmail.value.trim();
+  const password = authPass.value;
+  const isRegisterMode = authName && authName.style.display !== "none";
+
+  authError.textContent = "";
+
+  if (!email) {
+    authError.textContent = "Please enter your Email Address.";
+    return;
+  }
+  if (!password || password.length < 6) {
+    authError.textContent = "Password must be at least 6 characters.";
+    return;
+  }
 
   try {
-    if (authSubmitBtn) authSubmitBtn.disabled = true;
+    authSubmitBtn.disabled = true;
+    authSubmitBtn.textContent = "PROCESSING...";
 
-    if (account) {
-      // ---------------- LOGIN MODE ----------------
-      if (!email || !pass) {
-        if (authError) authError.textContent = "ইমেইল ও পাসওয়ার্ড প্রদান করুন।";
-        if (authSubmitBtn) authSubmitBtn.disabled = false;
+    if (isRegisterMode) {
+      // 1. REGISTRATION MODE
+      const company = authCompany ? authCompany.value.trim() : "";
+      const fullName = authName ? authName.value.trim() : "";
+      const empId = authEmpId ? authEmpId.value.trim() : "";
+      const confirmPass = authPassConfirm ? authPassConfirm.value : "";
+
+      if (!fullName) {
+        authError.textContent = "Please enter your Full Name.";
+        authSubmitBtn.disabled = false;
+        authSubmitBtn.textContent = "REGISTER";
+        return;
+      }
+      if (!empId) {
+        authError.textContent = "Please enter your Employee ID.";
+        authSubmitBtn.disabled = false;
+        authSubmitBtn.textContent = "REGISTER";
+        return;
+      }
+      if (password !== confirmPass) {
+        authError.textContent = "Passwords do not match.";
+        authSubmitBtn.disabled = false;
+        authSubmitBtn.textContent = "REGISTER";
         return;
       }
 
-      const userCredential = await signInWithEmailAndPassword(window.firebaseAuth, email, pass);
-      window.currentUser = userCredential.user;
-
-      // Fetch user profile from Firestore
-      const profile = await fetchUserProfile(window.currentUser.uid);
-      if (profile) {
-        window.userProfile = profile;
-      }
-
-      localStorage.setItem("ot-auth-session-v1", "1");
-      if (typeof showApp === "function") showApp();
-
-    } else {
-      // ---------------- REGISTER / SETUP MODE ----------------
-      const company = document.getElementById("authCompany")?.value.trim() || "";
-      const name = document.getElementById("authName")?.value.trim() || "";
-      const empId = document.getElementById("authEmpId")?.value.trim() || "";
-      const confirmPass = document.getElementById("authPassConfirm")?.value;
-
-      if (!company || !name || !empId || !email || !pass) {
-        if (authError) authError.textContent = "সকল প্রয়োজনীয় ঘর সঠিক তথ্য দিয়ে পূরণ করুন।";
-        if (authSubmitBtn) authSubmitBtn.disabled = false;
-        return;
-      }
-
-      if (pass !== confirmPass) {
-        if (authError) authError.textContent = "পাসওয়ার্ড দুটি মিলছে না।";
-        if (authSubmitBtn) authSubmitBtn.disabled = false;
-        return;
-      }
-
-      if (pass.length < 6) {
-        if (authError) authError.textContent = "পাসওয়ার্ড অন্তত ৬ অক্ষরের হতে হবে।";
-        if (authSubmitBtn) authSubmitBtn.disabled = false;
-        return;
-      }
-
-      // Create Firebase Auth user
-      const userCredential = await createUserWithEmailAndPassword(window.firebaseAuth, email, pass);
-      window.currentUser = userCredential.user;
+      // Create Firebase Auth User
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
 
       // Save User Profile to Firestore
-      const profileData = { company, name, empId, email };
-      await saveUserProfile(window.currentUser, profileData);
+      await setDoc(doc(db, "users", user.uid), {
+        companyName: company,
+        fullName: fullName,
+        employeeId: empId,
+        email: email,
+        createdAt: new Date().toISOString()
+      });
 
-      // Save local session state
-      localStorage.setItem("ot-auth-account-v1", JSON.stringify({
-        user: email,
-        name: name,
-        company: company,
-        empId: empId
-      }));
-      localStorage.setItem("ot-auth-session-v1", "1");
-
-      if (typeof showApp === "function") showApp();
+    } else {
+      // 2. LOGIN MODE
+      await signInWithEmailAndPassword(auth, email, password);
     }
+
   } catch (error) {
     console.error("Auth Error:", error);
-    let errorMsg = "অপ্রত্যাশিত একটি সমস্যা ঘটেছে।";
-    if (error.code === "auth/invalid-email") errorMsg = "ইমেইল অ্যাড্রেস সঠিক নয়।";
-    else if (error.code === "auth/user-not-found" || error.code === "auth/wrong-password" || error.code === "auth/invalid-credential") errorMsg = "ভুল ইমেইল বা পাসওয়ার্ড।";
-    else if (error.code === "auth/email-already-in-use") errorMsg = "এই ইমেইল দিয়ে ইতোমধ্যে অ্যাকাউন্ট রয়েছে।";
-    else if (error.code === "auth/weak-password") errorMsg = "পাসওয়ার্ড অত্যন্ত দুর্বল। অন্তত ৬ অক্ষর দিন।";
-
-    if (authError) authError.textContent = errorMsg;
+    let msg = "Authentication failed.";
+    if (error.code === "auth/user-not-found" || error.code === "auth/wrong-password" || error.code === "auth/invalid-credential") {
+      msg = "Invalid Email or Password.";
+    } else if (error.code === "auth/email-already-in-use") {
+      msg = "This email is already registered.";
+    } else if (error.code === "auth/invalid-email") {
+      msg = "Please enter a valid email address.";
+    }
+    authError.textContent = msg;
   } finally {
-    if (authSubmitBtn) authSubmitBtn.disabled = false;
+    authSubmitBtn.disabled = false;
+    authSubmitBtn.textContent = isRegisterMode ? "REGISTER" : "LOGIN";
   }
 }
 
@@ -152,34 +114,34 @@ export async function handleAuthSubmit() {
  */
 export async function handleLogout() {
   try {
-    await signOut(window.firebaseAuth);
-    window.currentUser = null;
-    window.userProfile = null;
+    await signOut(auth);
     localStorage.removeItem("ot-auth-session-v1");
-    if (typeof showAuthScreen === "function") showAuthScreen();
+    if (typeof window.showAuthScreen === "function") {
+      window.showAuthScreen();
+    } else {
+      window.location.reload();
+    }
   } catch (error) {
     console.error("Logout Error:", error);
   }
 }
 
 /**
- * Listen to Authentication State Changes
+ * Fetch and return Firestore User Profile Data
  */
-export function initAuthListener() {
-  onAuthStateChanged(window.firebaseAuth, async (user) => {
-    if (user) {
-      window.currentUser = user;
-      const profile = await fetchUserProfile(user.uid);
-      if (profile) {
-        window.userProfile = profile;
-      }
-    } else {
-      window.currentUser = null;
-      window.userProfile = null;
+export async function getUserProfile(uid) {
+  try {
+    const userDoc = await getDoc(doc(db, "users", uid));
+    if (userDoc.exists()) {
+      return userDoc.data();
     }
-  });
+    return null;
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    return null;
+  }
 }
 
-// Make critical functions accessible globally for HTML event handling
+// Global scope attachment for HTML inline listener compatibilities if needed
 window.handleAuthSubmit = handleAuthSubmit;
 window.handleLogout = handleLogout;
