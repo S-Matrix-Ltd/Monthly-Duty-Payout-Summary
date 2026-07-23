@@ -2,59 +2,60 @@ name: Android APK Build
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - name: Check out repository
+        uses: actions/checkout@v4
 
-    - name: Set up JDK 21
-      uses: actions/setup-java@v4
-      with:
-        java-version: '21'
-        distribution: 'temurin'
-        cache: gradle
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
 
-    - name: Set up Node.js 22
-      uses: actions/setup-node@v4
-      with:
-        node-version: '22'
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
 
-    - name: Install dependencies
-      run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-    - name: Build Web Assets
-      run: npm run build --if-present
-    - name: Install Capacitor Assets Tool
-      run: npm install @capacitor/assets --save-dev
+      - name: Build Web Assets
+        run: npm run build
 
-    - name: Generate App Icons and Splash Screen
-      run: |
-        mkdir -p assets
-        cp icon-512.png assets/icon-only.png
-        cp icon-512.png assets/icon-foreground.png
-        cp icon-512.png assets/icon-background.png
-        npx capacitor-assets generate --android
+      - name: Install Capacitor Assets Tool
+        run: npm install @capacitor/assets --save-dev
 
+      - name: Generate App Icons and Splash Screen
+        run: |
+          mkdir -p assets
+          cp icon-512.png assets/icon-only.png || true
+          cp icon-512.png assets/icon-foreground.png || true
+          cp icon-512.png assets/icon-background.png || true
+          npx capacitor-assets generate --android
 
-    - name: Sync Capacitor
-      run: npx cap sync android
-    - name: Generate Fixed Debug Keystore
-         run: |
-           keytool -genkey -v -keystore android/app/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+      - name: Sync Capacitor
+        run: npx cap sync android
 
-    - name: Build Android APK
-      run: |
-        cd android
-        chmod +x gradlew
-        ./gradlew assembleDebug
+      - name: Setup Fixed Debug Keystore
+        run: |
+          mkdir -p android/app
+          keytool -genkey -v -keystore android/app/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
 
-    - name: Upload APK Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: app-debug
-        path: android/app/build/outputs/apk/debug/app-debug.apk
+      - name: Build Android APK
+        run: |
+          cd android
+          ./gradlew assembleDebug
 
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
