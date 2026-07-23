@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Progresst</string>
+    <string name="title_activity_main">Progresst</string>
+    <string name="package_name">com.smatrixltd.progress</string>
+    <string name="custom_url_scheme">com.smatrixltd.progress</string>
+</resources>

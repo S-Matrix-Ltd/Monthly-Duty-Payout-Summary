@@ -1,0 +1,2555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Monthly Duty & OT Statement</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1976d2">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Duty OT">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Rajdhani:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+  :root{
+    --bg: #EEF2F6;
+    --panel: #FFFFFF;
+    --panel2: #F8FAFC;
+    --line: #CBD5E1;
+    --col-line: #E2E8F0;
+    --zebra: #F4F7FB;
+    --text: #0F172A;
+    --muted: #475569;
+    
+    --primary: #3730A3;    
+    --primary2: #6D28D9;
+    --teal: #047857;       
+    --sky: #0369A1;        
+    --violet: #7C3AED;     
+    --rose: #B91C1C;       
+    --amber: #B45309;
+    --weekend-bg: #52B788; /* Clear green — kept visually distinct from violet Night Duty */
+    --weekend-border: #2D6A4F;
+
+    --auth-g1: #14123A; --auth-g2: #241E6B; --auth-g3: #063A56;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background: linear-gradient(180deg, #EEF2F6 0%, #E4E9F5 100%);color:var(--text);font-family:'Inter',sans-serif;}
+  body{padding-bottom:20px;}
+  .wrap{max-width:620px;margin:0 auto;padding:14px;}
+  #mainTitleText, #summaryTitleText{text-transform:uppercase;}
+
+  /* Header Bar */
+  .topbar{
+    background: linear-gradient(135deg, #2E2A82 0%, #3730A3 45%, #0369A1 100%);
+    color: #FFFFFF;
+    border-radius:16px;
+    padding:22px 20px 20px;
+    margin-bottom:14px;
+    box-shadow: 0 8px 20px rgba(46, 42, 130, 0.4);
+    position:relative;
+    overflow:hidden;
+  }
+  .topbar::after{
+    content:''; position:absolute; top:-40%; right:-10%; width:180px; height:180px;
+    background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 70%);
+    pointer-events:none;
+  }
+  .eyebrow{font-size:11px; letter-spacing:2px; color:#A5F3FC; font-weight:800;}
+  .header-titles{margin-right:0; padding-right:30px; min-height:40px;}
+  h1{
+    font-family:'Rajdhani',sans-serif;
+    font-weight:800; font-size:clamp(12px, 4.2vw, 18px); margin:4px 0 3px; letter-spacing:0.2px;
+    color:#FFFFFF; text-shadow: 0 1px 2px rgba(0,0,0,0.2); line-height:1.2;
+    white-space:nowrap;
+  }
+  .header-subtitle{
+    font-size:10.5px; font-weight:700; letter-spacing:1.4px; 
+    color:#BFDBFE; opacity:0.85; margin:0 0 16px;
+  }
+
+  /* Profile Block */
+  .profile-block{
+    display:flex; align-items:center; gap:12px; margin-top:4px;
+    padding-top:14px; border-top:1px solid rgba(255,255,255,0.18);
+  }
+  .avatar{
+    flex:0 0 auto; width:46px; height:46px; border-radius:14px;
+    background:rgba(255,255,255,0.16); border:1.5px solid rgba(255,255,255,0.4);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Rajdhani',sans-serif; font-weight:800; font-size:19px; color:#FFFFFF;
+    position:relative; cursor:pointer; background-size:cover; background-position:center;
+    overflow:hidden;
+  }
+  .avatar-cam-badge{
+    position:absolute; right:-2px; bottom:-2px; width:18px; height:18px; border-radius:50%;
+    background:var(--sky); border:1.5px solid #FFF; display:flex; align-items:center; justify-content:center;
+  }
+  .avatar-cam-badge svg{width:10px; height:10px; stroke:#FFF;}
+  #avatarPhotoInput{display:none;}
+  .profile-text{
+    min-width:0; flex:1;
+    background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18);
+    border-radius:10px; padding:8px 12px;
+  }
+  .profile-name-row{display:flex; align-items:baseline; gap:8px; flex-wrap:wrap;}
+  .profile-name{
+    font-size:15px; font-weight:800; color:#FFFFFF; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .profile-id{
+    font-size:11px; font-weight:700; color:#A5F3FC; white-space:nowrap;
+  }
+  .profile-meta{
+    display:flex; flex-direction:column; gap:1px; margin-top:2px;
+  }
+  .profile-meta span{
+    font-size:11.5px; font-weight:500; color:#CBD5E1; opacity:0.8;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .profile-meta span:empty{display:none;}
+
+  select, input[type=number]{
+    background:#FFFFFF; color:var(--text); border:1.5px solid #CBD5E1;
+    border-radius:8px; padding:10px; font-size:14px; font-weight:600; font-family:'Inter',sans-serif;
+  }
+  select:focus, input:focus{outline:2px solid var(--primary); outline-offset:1px;}
+
+  /* Month/Year picker — styled as a card, matching the reminder card */
+  .month-picker-card{
+    border-left-color:var(--sky); padding:14px 16px;
+    background: rgba(3,105,161,0.06);
+  }
+  .month-picker-row{display:flex; align-items:center; gap:10px;}
+  .month-picker-icon{font-size:18px; flex:0 0 auto;}
+  .month-picker-label{
+    font-size:12px; font-weight:800; color:var(--text); flex:1; min-width:0;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    text-transform:uppercase; letter-spacing:0.5px;
+  }
+  .month-picker-fields{
+    display:flex; align-items:center; gap:6px; flex:0 0 auto;
+    background: rgba(255,255,255,0.5); padding:6px 8px; border-radius:10px;
+  }
+  .mp-select{
+    border:1.5px solid var(--line) !important; background:var(--panel2) !important;
+    padding:9px 10px !important; border-radius:8px;
+    font-size:13px !important; font-weight:700 !important; color:var(--text); cursor:pointer;
+    transition:border-color .15s ease;
+  }
+  .mp-select:hover, .mp-select:focus{border-color:var(--primary2) !important;}
+  #yearInput.mp-select{width:70px; text-align:center;}
+
+  /* Custom month dropdown — a real list that drops down below the button */
+  .mp-dropdown{position:relative;}
+  .mp-dropdown-btn{
+    display:flex; align-items:center; gap:8px; justify-content:space-between;
+    width:118px;
+  }
+  .mp-dropdown-arrow{flex:0 0 auto; color:var(--muted); transition:transform .15s ease;}
+  .mp-dropdown.open .mp-dropdown-arrow{transform:rotate(180deg);}
+  .mp-dropdown-list{
+    position:absolute; top:calc(100% + 6px); left:0; width:140px; max-height:220px;
+    overflow-y:auto; background:var(--panel); border:1.5px solid var(--line);
+    border-radius:10px; box-shadow:0 12px 28px rgba(0,0,0,0.18);
+    z-index:40; display:none; padding:6px;
+  }
+  .mp-dropdown.open .mp-dropdown-list{display:block;}
+  .mp-dropdown-item{
+    padding:9px 10px; border-radius:7px; font-size:13px; font-weight:700;
+    color:var(--text); cursor:pointer; transition:background .12s ease;
+  }
+  .mp-dropdown-item:hover{background: rgba(3,105,161,0.1);}
+  .mp-dropdown-item.active{background:var(--primary); color:#FFF;}
+
+  /* Cards */
+  .card{
+    background:var(--panel); border:1px solid var(--line); border-left:4px solid var(--primary); border-radius:14px;
+    padding:16px; margin-bottom:14px; box-shadow: 0 3px 10px rgba(15, 23, 42, 0.06);
+  }
+  .card h2{
+    font-size:13px; letter-spacing:1px; color:var(--primary); margin:0 0 12px; font-weight:800;
+  }
+  
+  /* Rate Settings / Configuration Accordion */
+  .rate-details summary{
+    list-style:none; cursor:pointer; padding:2px 0;
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    font-size:13px; letter-spacing:1px; color:var(--primary); font-weight:800;
+  }
+  .rate-details summary::-webkit-details-marker{display:none;}
+  .chevron{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:22px; height:22px; border-radius:50%; background:var(--panel2); border:1.5px solid var(--line);
+    flex:0 0 auto; transition:transform .2s ease;
+  }
+  .chevron svg{width:11px; height:11px; display:block;}
+  .rate-details[open] .chevron{transform:rotate(180deg); background:var(--primary); border-color:var(--primary);}
+  .rate-details[open] .chevron svg{stroke:#FFF;}
+  .rate-body{padding-top:14px;}
+  .rate-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+  .rate-chip{background: linear-gradient(180deg, var(--panel2) 0%, #EEF1F8 100%); border:1.5px solid var(--line); border-radius:10px; padding:8px; transition:border-color .15s ease;}
+  .rate-chip label{display:block; font-size:10px; font-weight:800; color:var(--muted); margin-bottom:4px; }
+  .rate-chip input{width:100%; padding:6px; font-size:13px; border-radius:6px; font-weight:700; cursor:pointer;}
+  .rate-chip input:focus{border-color:var(--amber); outline:2px solid rgba(217,119,6,0.25);}
+  .rate-hint{font-size:10px; color:var(--muted); margin-top:10px; text-align:center; font-weight:600; font-style:italic;}
+
+  /* Reminder — now a collapsible dropdown (accordion), amber accent */
+  .reminder-card{
+    border-left-color:var(--amber);
+  }
+  .reminder-card summary{color:var(--amber) !important;}
+  .reminder-card[open] .chevron{background:var(--amber) !important; border-color:var(--amber) !important;}
+  .reminder-row{display:flex; align-items:center; gap:10px;}
+  .reminder-label{
+    font-size:12px; font-weight:800; color:var(--text); flex:1; min-width:0;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .reminder-row input[type=time]{
+    flex:0 0 auto; width:98px; padding:8px 6px; text-align:center; font-size:12.5px;
+  }
+  #reminderTestBtn{
+    flex:0 0 auto; width:auto; padding:9px 12px; font-size:11px;
+    background:var(--panel2); color:var(--amber); border:1.5px solid var(--line);
+  }
+  .reminder-note{font-size:10.5px; color:var(--muted); margin-top:9px; font-weight:600; line-height:1.4;}
+
+  .switch{position:relative; display:inline-block; width:46px; height:26px; flex:0 0 auto;}
+  .switch input{opacity:0; width:0; height:0;}
+  .switch .slider{
+    position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0;
+    background:#CBD5E1; transition:.2s; border-radius:26px;
+  }
+  .switch .slider::before{
+    position:absolute; content:""; height:20px; width:20px; left:3px; bottom:3px;
+    background:#FFF; transition:.2s; border-radius:50%; box-shadow:0 1px 3px rgba(0,0,0,0.3);
+  }
+  .switch input:checked + .slider{background: linear-gradient(135deg, var(--teal), var(--sky));}
+  .switch input:checked + .slider::before{transform:translateX(20px);}
+
+  /* Table Grid */
+  .table-card{padding:12px 6px;}
+  .thead-row, .day-row{
+    display:grid; grid-template-columns:115px 55px 1fr 1fr 1fr; gap:0; align-items:center;
+    padding:11px 4px;
+  }
+  .thead-row{
+    font-size:11px; text-transform:uppercase; letter-spacing:0.5px;
+    color:#FFF; background: linear-gradient(135deg, var(--primary) 0%, var(--primary2) 100%);
+    border-radius:9px; padding:12px 4px; margin-bottom:10px;
+    text-align:center; font-weight:900; line-height:1.2;
+    box-shadow: 0 3px 8px rgba(79,70,229,0.2);
+  }
+  .thead-row div{border-right:1px solid rgba(255,255,255,0.25);}
+  .thead-row div:last-child{border-right:none;}
+  .thead-row div:nth-child(1){text-align:left; padding-left:6px; color:#FFF;}
+
+  .day-row{
+    font-size:12.5px; border-radius:8px; transition:background .2s ease;
+    border:1px solid var(--col-line);
+    padding:6px 4px;
+  }
+  .day-row > div{border-right:1px solid var(--col-line); padding:3px 3px;}
+  .day-row > div:last-child{border-right:none;}
+  /* More contrasting, professional, semi-transparent zebra tint — alternating hues so
+     neighbouring rows never read as the same shade */
+  .day-row:nth-child(odd){background: rgba(55,48,163,0.05);}
+  .day-row:nth-child(even){background: rgba(3,105,161,0.075);}
+  .day-row.weekend{background: var(--weekend-bg); border-color: var(--weekend-border);}
+  .day-row.weekend > div{border-right-color: var(--weekend-border);}
+  
+  .date-cell{font-size:12px; font-weight:700; color:var(--text); white-space:nowrap; padding-left:6px !important; transition:color .15s ease;}
+  .wd{display:inline-block; font-size:10px; color:var(--muted); margin-left:4px; font-weight:600; transition:color .15s ease;}
+
+  /* Marked rows keep normal dark text (backgrounds are light enough now) */
+  .day-row.is-marked .date-cell{color:var(--text); text-shadow:none;}
+  .day-row.is-marked .wd{color:var(--muted); text-shadow:none;}
+  .day-row.is-marked input[type=number]{background:rgba(255,255,255,0.92); color:var(--text);}
+
+  /* OT (H) numeric input — distinct, well-defined field */
+  .day-row input[type=number]{
+    width:100%; padding:5px 2px; text-align:center; font-size:13px; font-weight:800;
+    border-radius:7px; background:#FFFFFF; border:1.5px solid var(--line); color:var(--primary2);
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  .day-row input[type=number]:hover{border-color:var(--primary2);}
+  .day-row input[type=number]:focus{
+    border-color:var(--primary2); outline:none;
+    box-shadow:0 0 0 3px rgba(124,58,237,0.15);
+  }
+  .day-row input[type=number]::placeholder{color:var(--muted); font-weight:600;}
+
+  /* Checkbox Styling — modern rounded-square boxes */
+  .status-box{
+    position:relative; height:23px; width:23px; margin:0 auto; border-radius:7px;
+    border:2px solid #94A3B8; background:#FFF; cursor:pointer; transition:all .15s ease;
+  }
+  .status-box::after{
+    content:''; position:absolute; inset:0; margin:auto; width:12px; height:7px;
+    border-left:2.5px solid #FFF; border-bottom:2.5px solid #FFF; transform:translateY(-1px) rotate(-45deg);
+    opacity:0; transition:opacity .12s ease;
+  }
+  .status-box.active::after{opacity:1;}
+  .status-box:hover{border-color:var(--muted);}
+  
+  .status-box.night.active{background:var(--violet); border-color:var(--violet); box-shadow: 0 0 6px rgba(139, 92, 246, 0.4);}
+  .status-box.duty.active{background:var(--sky); border-color:var(--sky); box-shadow: 0 0 6px rgba(2, 132, 199, 0.4);}
+  .status-box.dayoff.active{background:var(--rose); border-color:var(--rose); box-shadow: 0 0 6px rgba(220, 38, 38, 0.4);}
+
+  /* Summary Section */
+  .summary-grid{display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:6px; margin-bottom:14px;}
+  .sum-chip{background:#FFF; border-radius:10px; padding:10px 2px; text-align:center; border:2px solid var(--line); box-shadow:0 2px 5px rgba(0,0,0,0.03); transition:transform .15s ease;}
+  .sum-chip .val{font-size:17px; font-weight:800;}
+  .sum-chip .lbl{font-size:9px; color:var(--muted); margin-top:2px; font-weight:800; }
+  
+  .sum-chip.ot{border-color:var(--teal); background:linear-gradient(180deg,#FFF 60%,#ECFDF5 100%);} .sum-chip.ot .val{color:var(--teal);}
+  .sum-chip.night{border-color:var(--violet); background:linear-gradient(180deg,#FFF 60%,#F5F3FF 100%);} .sum-chip.night .val{color:var(--violet);}
+  .sum-chip.duty{border-color:var(--sky); background:linear-gradient(180deg,#FFF 60%,#EFF6FF 100%);} .sum-chip.duty .val{color:var(--sky);}
+  .sum-chip.dayoff{border-color:var(--rose); background:linear-gradient(180deg,#FFF 60%,#FEF2F2 100%);} .sum-chip.dayoff .val{color:var(--rose);}
+
+  .total-display{
+    background: linear-gradient(135deg, #0F172A 0%, #1E293B 60%, #312E81 100%);
+    border-radius:12px; padding:14px 12px; text-align:center; margin-bottom:14px; color:#FFF;
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.25);
+  }
+  .total-display .lbl{font-size:12px; color:#94A3B8; letter-spacing:1.5px; font-weight:900;}
+  /* Reduced font size for total amount */
+  .total-display .amt{font-size:28px; font-weight:900; color:#38BDF8; letter-spacing:1px; margin-top:2px;}
+
+  .btn-row{display:flex; gap:8px;}
+  button{
+    flex:1; padding:12px 6px; border:none; border-radius:10px; font-size:13px; font-weight:800;
+    font-family:'Inter',sans-serif; cursor:pointer; transition:all .15s ease;
+  }
+  #pdfBtn{background: linear-gradient(135deg, var(--primary) 0%, var(--sky) 100%); color:#FFF; box-shadow: 0 3px 8px rgba(79, 70, 229, 0.35);}
+  #resetBtn{background:#FEF2F2; color:var(--rose); border:1.5px solid #FCA5A5;}
+  button:active{transform:scale(0.96);}
+
+  /* Custom Warning Modal */
+  #customModalOverlay, #alarmModalOverlay, #updateModalOverlay{
+    position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.6);
+    display:none; justify-content:center; align-items:center; z-index:9999; backdrop-filter: blur(2px);
+  }
+  .modal-box{
+    background:#FFF; border-radius:14px; padding:20px; width:88%; max-width:340px; text-align:center;
+    box-shadow:0 10px 25px rgba(0,0,0,0.2); border-top: 5px solid var(--rose);
+  }
+  .modal-box.alarm{border-top-color:var(--amber); animation: ringPulse 1s ease-in-out infinite;}
+  @keyframes ringPulse{
+    0%,100%{box-shadow:0 10px 25px rgba(0,0,0,0.2), 0 0 0 0 rgba(217,119,6,0.4);}
+    50%{box-shadow:0 10px 25px rgba(0,0,0,0.2), 0 0 0 10px rgba(217,119,6,0);}
+  }
+  .modal-box h3{margin:0 0 8px; color:var(--rose); font-size:16px; font-weight:900;}
+  .modal-box.alarm h3{color:var(--amber);}
+  .modal-box.update{border-top-color:var(--primary);}
+  .modal-box.update h3{color:var(--primary);}
+  .modal-box p{font-size:13px; color:var(--muted); margin:0 0 18px; font-weight:600; line-height:1.4;}
+  .modal-actions{display:flex; gap:10px;}
+  .modal-actions button{padding:10px; border-radius:8px; font-size:12px;}
+  .btn-cancel{background:#E2E8F0; color:var(--text);}
+  .btn-confirm{background:var(--rose); color:#FFF;}
+  .btn-confirm.btn-amber{background: linear-gradient(135deg, var(--amber), #F59E0B); color:#FFF;}
+  .btn-confirm.btn-primary{background: linear-gradient(135deg, var(--primary), var(--sky)); color:#FFF;}
+
+  .status{font-size:12px; font-weight:800; text-align:center; margin-top:10px; min-height:16px;}
+  .status.error{color:var(--rose);}
+  .status.success{color:var(--teal);}
+  
+  .legend{font-size:11px; color:var(--muted); text-align:center; margin-top:14px; line-height:1.6; font-weight:600;}
+  .legend .lg-item{display:inline-flex; align-items:center; gap:4px; margin:0 5px;}
+  .legend .lg-dot{width:10px; height:10px; border-radius:3px; display:inline-block;}
+
+  /* Developer Footer */
+  .developer-credit{
+    text-align:center; font-size:11px; font-weight:700; color:#94A3B8; margin-top:20px;
+    letter-spacing:1.5px; 
+  }
+  .developer-credit a{
+    color:var(--primary); font-weight:800; text-decoration:none; border-bottom:1.5px dashed var(--primary);
+    padding-bottom:1px; transition:color .15s ease;
+  }
+  .developer-credit a:hover{color:var(--primary2);}
+
+  .copyright-tag{
+    text-align:center; font-size:10px; font-weight:600; color:var(--muted); opacity:0.65;
+    margin-top:6px; letter-spacing:0.3px;
+  }
+
+  /* Version / Update Check */
+  .version-box{
+    background:var(--panel2); border:1px solid var(--line); border-radius:10px;
+    padding:10px 12px; margin-top:14px;
+  }
+  .version-row{display:flex; align-items:center; justify-content:space-between; gap:8px;}
+  #appVersionLabel{font-size:11px; font-weight:800; color:var(--muted); letter-spacing:0.5px;}
+  #checkUpdateBtn{
+    flex:0 0 auto; width:auto; padding:7px 10px; font-size:10.5px; border-radius:7px;
+    background:#FFF; color:var(--primary); border:1.5px solid var(--line); font-weight:800;
+  }
+  .version-status{font-size:10.5px; color:var(--muted); font-weight:600; margin-top:6px; text-align:center; min-height:12px;}
+
+  /* Login / Auth Screen */
+  #authOverlay{
+    position:fixed; inset:0; z-index:10000; display:flex; align-items:center; justify-content:center;
+    background: linear-gradient(135deg, var(--auth-g1) 0%, var(--auth-g2) 45%, var(--auth-g3) 100%);
+    padding:20px;
+  }
+  .auth-box{
+    background:#FFF; width:100%; max-width:340px; border-radius:16px; padding:26px 22px;
+    box-shadow:0 15px 35px rgba(0,0,0,0.35); text-align:center;
+  }
+  .auth-logo{font-size:34px; margin-bottom:6px;}
+  .auth-box h2{
+    font-family:'Rajdhani',sans-serif; font-weight:800; font-size:20px; letter-spacing:1px;
+    margin:0 0 4px; color:var(--text); 
+  }
+  .auth-sub{font-size:11.5px; color:var(--muted); font-weight:600; margin-bottom:16px; line-height:1.4;}
+  .auth-box input{
+    width:100%; padding:11px; margin-bottom:10px; border-radius:9px; border:1.5px solid var(--line);
+    font-size:14px; font-weight:600; font-family:'Inter',sans-serif; background:var(--panel2);
+  }
+  .auth-box input:focus{outline:2px solid var(--primary); outline-offset:1px;}
+  .auth-error{font-size:11.5px; color:var(--rose); font-weight:700; min-height:14px; margin-bottom:8px;}
+  #authSubmitBtn{
+    width:100%; padding:12px; border:none; border-radius:9px; font-weight:800; font-size:13px;
+    letter-spacing:0.5px; color:#FFF; cursor:pointer;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--sky) 100%);
+    box-shadow:0 4px 10px rgba(79,70,229,0.3);
+  }
+  #authSubmitBtn:active{transform:scale(0.97);}
+  .auth-reset-link{
+    display:inline-block; margin-top:14px; font-size:10.5px; color:var(--muted); font-weight:700;
+    text-decoration:underline; cursor:pointer;
+  }
+  .top-actions{
+    position:absolute; top:14px; right:14px; display:flex; align-items:center; z-index:2;
+  }
+  /* Logout now lives inside Settings, styled as a clear destructive action */
+  .logout-inline-btn{
+    background: linear-gradient(135deg, var(--rose) 0%, #B91C1C 100%) !important;
+    box-shadow: 0 3px 8px rgba(220, 38, 38, 0.3);
+  }
+  .logout-inline-btn:active{transform:scale(0.97);}
+
+  /* ---------- Themes ---------- */
+  body.theme-ocean{
+    --primary:#075985; --primary2:#0E7490; --sky:#0284C7; --teal:#047857; --violet:#7C3AED; --rose:#B91C1C; --amber:#B45309;
+    --weekend-bg:#4CAE8A; --weekend-border:#296B52;
+    --auth-g1:#062338; --auth-g2:#083350; --auth-g3:#0C4A61;
+  }
+  body.theme-emerald{
+    --primary:#065F46; --primary2:#047857; --sky:#0D9488; --teal:#047857; --violet:#7C3AED; --rose:#B91C1C; --amber:#B45309;
+    --weekend-bg:#7CC49E; --weekend-border:#357653;
+    --auth-g1:#011E17; --auth-g2:#043A2C; --auth-g3:#0B5A54;
+  }
+  body.theme-sunset{
+    --primary:#B91C1C; --primary2:#C2410C; --sky:#D97706; --teal:#047857; --violet:#7C3AED; --rose:#991B1B; --amber:#B45309;
+    --weekend-bg:#5FB88A; --weekend-border:#2F7350;
+    --auth-g1:#340707; --auth-g2:#5C210D; --auth-g3:#5C2A0B;
+  }
+  body.theme-purple{
+    --primary:#5B21B6; --primary2:#7E22CE; --sky:#9333EA; --teal:#047857; --violet:#6D28D9; --rose:#B91C1C; --amber:#B45309;
+    --weekend-bg:#4CAE8A; --weekend-border:#296B52;
+    --auth-g1:#210A47; --auth-g2:#3B1770; --auth-g3:#42155F;
+  }
+  body.theme-dark{
+    --bg:#0F172A; --panel:#1E293B; --panel2:#0F172A; --line:#334155; --col-line:#334155; --zebra:#182234;
+    --text:#E2E8F0; --muted:#94A3B8;
+    --primary:#6366F1; --primary2:#8B5CF6; --sky:#38BDF8; --teal:#2DD4BF; --violet:#A78BFA; --rose:#F87171; --amber:#FBBF24;
+    --weekend-bg:#2F5849; --weekend-border:#4F9C82;
+    --auth-g1:#000000; --auth-g2:#0F172A; --auth-g3:#1E1B4B;
+  }
+  body.theme-dark html,body.theme-dark{background:linear-gradient(180deg, #0F172A 0%, #0B1220 100%);}
+  body.theme-dark .auth-box{background:#1E293B;}
+  body.theme-dark .auth-box input{background:#0F172A; color:var(--text); border-color:var(--line);}
+  body.theme-dark .day-row input[type=number]{background:#0F172A; color:var(--text);}
+  body.theme-dark select, body.theme-dark input[type=number]{background:#1E293B; color:var(--text); border-color:var(--line);}
+  body.theme-dark .sum-chip{background:#1E293B;}
+  body.theme-dark .sum-chip.ot{background:linear-gradient(180deg,#1E293B 60%,#0f2d28 100%);}
+  body.theme-dark .sum-chip.night{background:linear-gradient(180deg,#1E293B 60%,#241a3d 100%);}
+  body.theme-dark .sum-chip.duty{background:linear-gradient(180deg,#1E293B 60%,#0b2338 100%);}
+  body.theme-dark .sum-chip.dayoff{background:linear-gradient(180deg,#1E293B 60%,#331414 100%);}
+  body.theme-dark .modal-box, body.theme-dark .settings-box{background:#1E293B; color:var(--text);}
+  body.theme-dark .version-box{background:#1E293B;}
+  body.theme-dark .status-box{background:#0F172A;}
+
+  /* ---------- Hamburger Menu (Settings trigger) ---------- */
+  .gear-btn{
+    display:flex; align-items:center; justify-content:center;
+    background:transparent; border:none; padding:8px;
+    cursor:pointer; width:auto; flex:0 0 auto;
+  }
+  .gear-btn svg{width:22px; height:22px; flex:0 0 auto; display:block;}
+  .gear-btn:active{transform:scale(0.9);}
+
+  /* ---------- Settings Slide-in Panel ---------- */
+  #forgotOverlay{
+    position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.6);
+    display:none; justify-content:center; align-items:flex-start; z-index:10001; backdrop-filter:blur(2px);
+    overflow-y:auto; padding:24px 0;
+  }
+  #settingsOverlay{
+    position:fixed; top:0; left:0; width:100%; height:100%; z-index:10001;
+    background:rgba(15,23,42,0.6); backdrop-filter:blur(2px);
+    opacity:0; visibility:hidden;
+    transition:opacity .25s ease, visibility 0s linear .25s;
+  }
+  #settingsOverlay.open{
+    opacity:1; visibility:visible; transition:opacity .25s ease;
+  }
+  #settingsOverlay .settings-box{
+    position:absolute; top:0; right:0; height:100%; width:88%; max-width:340px;
+    border-radius:16px 0 0 16px; margin:0; box-shadow:-10px 0 30px rgba(0,0,0,0.35);
+    overflow-y:auto; transform:translateX(100%); transition:transform .3s ease;
+  }
+  #settingsOverlay.open .settings-box{
+    transform:translateX(0);
+  }
+  .settings-box{
+    background:#FFF; border-radius:16px; padding:20px; width:90%; max-width:360px; margin:auto;
+    box-shadow:0 15px 35px rgba(0,0,0,0.35);
+  }
+  .settings-box h3{margin:0 0 14px; font-size:16px; font-weight:900; color:var(--primary); letter-spacing:0.5px; text-align:center;}
+  .settings-section{
+    margin-bottom:18px; padding-bottom:16px; padding-left:12px; border-bottom:1px solid var(--col-line);
+    border-left:4px solid var(--primary); border-radius:6px;
+  }
+  .settings-section.no-accent{border-left:none; padding-left:0;}
+  .settings-section:last-of-type{border-bottom:none; margin-bottom:8px;}
+  .settings-label{font-size:11px; font-weight:800; color:var(--muted); letter-spacing:0.5px; margin-bottom:8px; display:block;}
+  .settings-section select{width:100%;}
+  .theme-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px;}
+  .theme-swatch{
+    border-radius:10px; padding:10px 4px; text-align:center; cursor:pointer; border:2px solid var(--line);
+    font-size:10px; font-weight:800; color:#FFF; 
+  }
+  .theme-swatch.active{outline:2px solid var(--text); outline-offset:2px;}
+  .theme-swatch.sw-indigo{background:linear-gradient(135deg,#4338CA,#0284C7);}
+  .theme-swatch.sw-ocean{background:linear-gradient(135deg,#0369A1,#0EA5E9);}
+  .theme-swatch.sw-emerald{background:linear-gradient(135deg,#047857,#10B981);}
+  .theme-swatch.sw-sunset{background:linear-gradient(135deg,#DC2626,#F59E0B);}
+  .theme-swatch.sw-purple{background:linear-gradient(135deg,#6D28D9,#A855F7);}
+  .theme-swatch.sw-dark{background:linear-gradient(135deg,#0F172A,#334155);}
+  .settings-box input{
+    width:100%; padding:10px; margin-bottom:8px; border-radius:8px; border:1.5px solid var(--line);
+    font-size:13px; font-weight:600; font-family:'Inter',sans-serif; background:var(--panel2); color:var(--text);
+  }
+  .settings-box button.action-btn{
+    width:100%; padding:11px; border:none; border-radius:9px; font-weight:800; font-size:12.5px;
+    color:#FFF; cursor:pointer;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--sky) 100%);
+  }
+  .settings-msg{font-size:11.5px; font-weight:700; min-height:14px; margin:6px 0; text-align:center;}
+  .settings-msg.error{color:var(--rose);}
+  .settings-msg.success{color:var(--teal);}
+  .history-list{max-height:160px; overflow-y:auto;}
+  .history-item{
+    display:flex; align-items:center; justify-content:space-between; padding:8px 10px; margin-bottom:6px;
+    background:var(--panel2); border-radius:8px; border:1px solid var(--line); font-size:12.5px; font-weight:700;
+  }
+  .history-item button{
+    flex:none; width:auto; padding:6px 10px; font-size:10.5px; border-radius:6px;
+    background:var(--primary); color:#FFF; border:none; cursor:pointer; 
+  }
+  .history-empty{font-size:12px; color:var(--muted); text-align:center; font-weight:600; padding:10px 0;}
+  .settings-close-btn{
+    width:100%; padding:10px; border-radius:9px; background:#E2E8F0; color:var(--text); border:none;
+    font-weight:800; font-size:12.5px; cursor:pointer; margin-top:4px;
+  }
+  .auth-forgot-link{
+    display:inline-block; margin-top:8px; font-size:10.5px; color:var(--primary); font-weight:800;
+    text-decoration:underline; cursor:pointer;
+  }
+  .auth-links-row{display:flex; flex-direction:column; gap:2px;}
+  .sec-q-row{margin-bottom:10px; text-align:left;}
+  .sec-q-row label{display:block; font-size:10.5px; font-weight:800; color:var(--muted); margin-bottom:4px; }
+  .sec-q-row select{width:100%; padding:11px; border-radius:9px; border:1.5px solid var(--line); background:var(--panel2); font-size:13px; font-weight:600;}
+  .forgot-step{display:none;}
+  .forgot-step.active{display:block;}
+  .forgot-question-display{
+    background:var(--panel2); border:1.5px solid var(--line); border-radius:9px; padding:10px; margin-bottom:10px;
+    font-size:12.5px; font-weight:700; text-align:left;
+  }
+
+  /* ---------- Calculator Modal (modernized) ---------- */
+  #calcOverlay{
+    position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.65);
+    display:none; justify-content:center; align-items:center; z-index:10002; backdrop-filter:blur(3px);
+    overflow-y:auto; padding:24px 0;
+  }
+  .calc-box{
+    max-width:340px; background: linear-gradient(165deg, #1E1B4B 0%, #0F172A 60%, #1E1B4B 100%);
+    border-radius:22px; padding:18px 16px 20px; box-shadow:0 20px 45px rgba(0,0,0,0.45);
+  }
+  .calc-box h3{color:#E0E7FF; opacity:0.85; margin:0;}
+  .calc-mode-row{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
+  .calc-mode-toggle{
+    background:rgba(129,140,248,0.22); color:#C7D2FE; border:1px solid rgba(129,140,248,0.4);
+    border-radius:8px; padding:5px 10px; font-size:11px; font-weight:800; letter-spacing:0.5px;
+    cursor:pointer; font-family:'Inter',sans-serif;
+  }
+  .calc-mode-toggle:hover{background:rgba(129,140,248,0.34);}
+  .calc-display{
+    background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); border-radius:16px;
+    padding:26px 16px; text-align:right; font-size:42px; font-weight:700; margin-bottom:6px;
+    word-break:break-all; color:#FFFFFF; min-height:50px; letter-spacing:0.5px;
+    font-family:'Rajdhani',sans-serif;
+  }
+  .calc-preview{
+    text-align:right; font-size:14px; font-weight:600; color:rgba(224,231,255,0.6);
+    min-height:16px; padding-right:6px; margin-bottom:14px; font-family:'Inter',sans-serif;
+    word-break:break-all;
+  }
+  .calc-sci-panel{display:none;}
+  .calc-sci-panel.open{display:block;}
+  .calc-sci-header{display:flex; justify-content:flex-end; margin-bottom:8px;}
+  .calc-grid{display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; margin-bottom:14px;}
+  .calc-grid-sci{gap:8px; margin-bottom:10px;}
+  .calc-btn{
+    padding:16px 4px; border:none; border-radius:50%; aspect-ratio:1/1;
+    background:rgba(255,255,255,0.08); color:#F1F5F9; font-size:17px; font-weight:700; cursor:pointer;
+    font-family:'Inter',sans-serif; transition:background .12s ease, transform .08s ease;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .calc-btn:hover{background:rgba(255,255,255,0.14);}
+  .calc-btn:active{transform:scale(0.92);}
+  .calc-btn.calc-op{background:rgba(129,140,248,0.22); color:#C7D2FE;}
+  .calc-btn.calc-op:hover{background:rgba(129,140,248,0.34);}
+  .calc-btn.calc-sci{
+    border-radius:12px; background:rgba(45,212,191,0.12); color:#99F6E4; font-size:13px; font-weight:700;
+    padding:10px 2px;
+  }
+  .calc-btn.calc-sci:hover{background:rgba(45,212,191,0.22);}
+  .calc-btn.calc-eq{
+    background: linear-gradient(135deg, var(--teal), #059669); color:#FFF;
+    box-shadow:0 4px 12px rgba(13,148,136,0.4);
+  }
+  .calc-btn.calc-eq:hover{filter:brightness(1.08);}
+  .calc-btn[data-calc="0"]{border-radius:22px; aspect-ratio:auto;}
+  #calcCloseBtn{
+    background:rgba(255,255,255,0.08); color:#E2E8F0; border:1px solid rgba(255,255,255,0.12);
+  }
+
+  /* ---------- Export Preview Modal ---------- */
+  #exportPreviewOverlay{
+    position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.7);
+    display:none; justify-content:center; align-items:center; z-index:10003; backdrop-filter:blur(2px);
+    padding:16px;
+  }
+  .export-box{
+    background:#FFF; border-radius:16px; width:100%; max-width:420px; max-height:92vh;
+    box-shadow:0 15px 35px rgba(0,0,0,0.4); display:flex; flex-direction:column; overflow:hidden;
+  }
+  .export-head{
+    display:flex; align-items:center; justify-content:space-between; padding:14px 16px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--sky) 100%); flex:0 0 auto;
+  }
+  .export-head h3{margin:0; font-size:14px; font-weight:900; color:#FFF; letter-spacing:0.5px; }
+  #exportPreviewCloseX{
+    background:rgba(255,255,255,0.2); border:none; color:#FFF; width:26px; height:26px; border-radius:50%;
+    cursor:pointer; font-size:13px; font-weight:800; flex:0 0 auto; padding:0; line-height:1;
+  }
+  .export-frame-wrap{flex:1 1 auto; min-height:340px; background:var(--panel2); overflow:hidden; position:relative;}
+  #exportPreviewFrame{width:100%; height:100%; min-height:340px; border:none; display:block;}
+  .export-fallback{
+    position:absolute; inset:0; display:none; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:24px; gap:12px; background:var(--panel2);
+  }
+  .export-fallback.show{display:flex;}
+  .export-fallback-icon{font-size:40px; opacity:0.6;}
+  .export-fallback-text{font-size:13px; color:var(--muted); font-weight:600; line-height:1.5; max-width:280px;}
+  .export-fallback a{padding:11px 20px; border-radius:9px; font-size:12.5px; font-weight:800; text-decoration:none; display:inline-flex; align-items:center; gap:4px;}
+  .export-actions{display:flex; gap:10px; padding:14px 16px; flex:0 0 auto; border-top:1px solid var(--col-line);}
+  .export-actions a, .export-actions button{
+    flex:1; padding:11px 6px; border-radius:9px; font-size:12.5px; font-weight:800; text-align:center;
+    text-decoration:none; cursor:pointer; border:none; display:inline-flex;
+    align-items:center; justify-content:center; gap:4px;
+  }
+</style>
+</head>
+<body>
+
+<!-- Login / Setup Screen -->
+<div id="authOverlay">
+  <div class="auth-box">
+    <div class="auth-logo">🔐</div>
+    <h2 id="authTitle">Login</h2>
+    <div class="auth-sub" id="authSub">আপনার ইউজার আইডি ও পাসওয়ার্ড দিন</div>
+    <input type="text" id="authCompanyName" placeholder="Company Name" maxlength="60" autocomplete="off" style="display:none;">
+    <input type="text" id="authCompanyAddress" placeholder="Company Address" maxlength="100" autocomplete="off" style="display:none;">
+    <input type="text" id="authName" placeholder="Full Name" maxlength="40" autocomplete="off" style="display:none;">
+    <input type="text" id="authUser" placeholder="User ID" maxlength="24" autocomplete="off">
+    <input type="password" id="authPass" placeholder="Password (4-12 letters/digits)" maxlength="12">
+    <input type="password" id="authPassConfirm" placeholder="Confirm Password" maxlength="12" style="display:none;">
+    <div class="sec-q-row" id="secQRow" style="display:none;">
+      <label id="secQuestionLabelText">Security Question</label>
+      <select id="authSecQ"></select>
+      <input type="text" id="authSecA" placeholder="Your Answer" maxlength="40" style="margin-top:8px;">
+    </div>
+    <div class="auth-error" id="authError"></div>
+    <button id="authSubmitBtn">Login</button>
+    <div class="auth-links-row">
+      <div class="auth-reset-link" id="authResetLink">অ্যাকাউন্ট রিসেট করুন (নতুন আইডি/পাসওয়ার্ড সেট করতে)</div>
+      <div class="auth-forgot-link" id="authForgotLink">পাসওয়ার্ড ভুলে গেছেন?</div>
+    </div>
+  </div>
+</div>
+
+<!-- Forgot Password Modal -->
+<div id="forgotOverlay">
+  <div class="settings-box">
+    <h3 id="forgotTitleText">Password Recovery</h3>
+
+    <div class="forgot-step active" id="forgotStep1">
+      <input type="text" id="forgotUser" placeholder="User ID" maxlength="24">
+      <div class="settings-msg" id="forgotStep1Msg"></div>
+      <button class="action-btn" id="forgotStep1Btn">Next</button>
+    </div>
+
+    <div class="forgot-step" id="forgotStep2">
+      <div class="forgot-question-display" id="forgotQuestionDisplay"></div>
+      <input type="text" id="forgotAnswer" placeholder="Your Answer" maxlength="40">
+      <div class="settings-msg" id="forgotStep2Msg"></div>
+      <button class="action-btn" id="forgotStep2Btn">Verify</button>
+    </div>
+
+    <div class="forgot-step" id="forgotStep3">
+      <input type="password" id="forgotNewPass" placeholder="New Password (4-12 letters/digits)" maxlength="12">
+      <input type="password" id="forgotNewPassConfirm" placeholder="Confirm New Password" maxlength="12">
+      <div class="settings-msg" id="forgotStep3Msg"></div>
+      <button class="action-btn" id="forgotStep3Btn">Reset Password</button>
+    </div>
+
+    <button class="settings-close-btn" id="forgotCloseBtn">Cancel</button>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div id="settingsOverlay">
+  <div class="settings-box">
+    <h3 id="settingsTitleText">Settings</h3>
+
+    <div class="settings-section">
+      <span class="settings-label" id="settingsLanguageLabelText">Language</span>
+      <select id="languageSelect">
+        <option value="bn">বাংলা (Bangla)</option>
+        <option value="en">English</option>
+      </select>
+    </div>
+
+    <div class="settings-section" style="border-left-color:var(--violet);">
+      <span class="settings-label" id="settingsThemeLabelText">Theme</span>
+      <div class="theme-grid">
+        <div class="theme-swatch sw-indigo" data-theme="indigo" id="themeLabelIndigo">Indigo</div>
+        <div class="theme-swatch sw-ocean" data-theme="ocean" id="themeLabelOcean">Ocean</div>
+        <div class="theme-swatch sw-emerald" data-theme="emerald" id="themeLabelEmerald">Emerald</div>
+        <div class="theme-swatch sw-sunset" data-theme="sunset" id="themeLabelSunset">Sunset</div>
+        <div class="theme-swatch sw-purple" data-theme="purple" id="themeLabelPurple">Purple</div>
+        <div class="theme-swatch sw-dark" data-theme="dark" id="themeLabelDark">Dark</div>
+      </div>
+    </div>
+
+    <div class="settings-section no-accent" style="padding-bottom:0; border-bottom:none;">
+      <details class="card rate-details" open style="margin-bottom:14px;">
+        <summary><span id="rateSettingsTitleText">CONFIGURATION & RATES</span><span class="chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span></summary>
+        <div class="rate-body">
+          <div class="rate-grid">
+            <div class="rate-chip">
+              <label id="rateOTLabelText">OT / HR</label>
+              <input type="number" id="rateOT" value="40">
+            </div>
+            <div class="rate-chip">
+              <label id="rateNightLabelText">NIGHT DUTY</label>
+              <input type="number" id="rateNight" value="100">
+            </div>
+            <div class="rate-chip">
+              <label id="rateOFFLabelText">OFF DAY DUTY</label>
+              <input type="number" id="rateOFF" value="300">
+            </div>
+            <div class="rate-chip">
+              <label id="rateGrossLabelText">Gross</label>
+              <input type="number" id="rateGross" value="" placeholder="0">
+            </div>
+          </div>
+          <div class="rate-hint" id="rateHintText">⚠ Changing a rate requires confirmation</div>
+        </div>
+      </details>
+
+      <details class="card rate-details reminder-card" style="margin-bottom:0;">
+        <summary><span id="reminderCardTitleText">⏰ Daily Entry Reminder</span><span class="chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span></summary>
+        <div class="rate-body">
+          <div class="reminder-row">
+            <label class="switch">
+              <input type="checkbox" id="reminderEnabled">
+              <span class="slider"></span>
+            </label>
+            <span class="reminder-label" id="reminderInlineLabelText">Daily Reminder</span>
+            <input type="time" id="reminderTime" value="21:00">
+            <button id="reminderTestBtn" type="button">🔔 <span id="reminderTestBtnText">Test</span></button>
+          </div>
+          <div class="reminder-note" id="reminderNote">প্রতিদিন এই সময়ে এন্ট্রি দেওয়ার জন্য অ্যালার্ম বাজবে (পেজ/ট্যাব খোলা থাকতে হবে)।</div>
+        </div>
+      </details>
+    </div>
+
+    <div class="settings-section no-accent">
+      <details class="card rate-details" style="margin-bottom:0;">
+        <summary><span id="settingsChangePasswordLabelText">Change Password</span><span class="chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span></summary>
+        <div class="rate-body">
+          <input type="password" id="curPassInput" placeholder="Current Password" maxlength="12">
+          <input type="password" id="newPassInput" placeholder="New Password (4-12 letters/digits)" maxlength="12">
+          <input type="password" id="newPassConfirmInput" placeholder="Confirm New Password" maxlength="12">
+          <div class="settings-msg" id="changePassMsg"></div>
+          <button class="action-btn" id="changePassBtn">UPDATE PASSWORD</button>
+        </div>
+      </details>
+    </div>
+
+    <div class="settings-section" style="border-left-color:var(--teal);">
+      <span class="settings-label" id="settingsCalculatorLabelText">Calculator</span>
+      <button class="action-btn" id="openCalcBtn" type="button">🧮 <span id="openCalcBtnText">Open Calculator</span></button>
+    </div>
+
+    <div class="settings-section" style="border-left-color:var(--sky);">
+      <span class="settings-label" id="settingsHistoryLabelText">Previous Month History</span>
+      <div class="history-list" id="historyList"></div>
+    </div>
+
+    <div class="settings-section no-accent" style="border-bottom:none; border-left:4px solid var(--rose); padding-left:12px;">
+      <button class="action-btn logout-inline-btn" id="logoutBtn" type="button">🚪 <span id="logoutBtnText">Logout</span></button>
+    </div>
+
+    <div class="settings-msg" id="settingsSaveMsg"></div>
+    <div class="btn-row" style="margin-top:4px;">
+      <button class="settings-close-btn" id="settingsBackBtn" style="margin-top:0;">⬅ <span id="settingsBackBtnText">Back</span></button>
+      <button class="action-btn" id="settingsSaveBtn" style="flex:1;">💾 <span id="settingsSaveBtnText">Save</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- Calculator Modal -->
+<div id="calcOverlay">
+  <div class="settings-box calc-box">
+    <div class="calc-mode-row">
+      <h3 id="calcTitleText">Calculator</h3>
+      <button type="button" id="calcSciToggleBtn" class="calc-mode-toggle">Scientific ▾</button>
+    </div>
+    <div class="calc-display" id="calcDisplay">0</div>
+    <div class="calc-preview" id="calcPreview">&nbsp;</div>
+
+    <div class="calc-sci-panel" id="calcSciPanel">
+      <div class="calc-sci-header">
+        <button type="button" id="calcAngleModeBtn" class="calc-mode-toggle">DEG</button>
+      </div>
+      <div class="calc-grid calc-grid-sci">
+        <button type="button" class="calc-btn calc-sci" data-calc="(">(</button>
+        <button type="button" class="calc-btn calc-sci" data-calc=")">)</button>
+        <button type="button" class="calc-btn calc-sci" data-calc="sin">sin</button>
+        <button type="button" class="calc-btn calc-sci" data-calc="cos">cos</button>
+
+        <button type="button" class="calc-btn calc-sci" data-calc="tan">tan</button>
+        <button type="button" class="calc-btn calc-sci" data-calc="log">log</button>
+        <button type="button" class="calc-btn calc-sci" data-calc="ln">ln</button>
+        <button type="button" class="calc-btn calc-sci" data-calc="sqrt">√</button>
+
+        <button type="button" class="calc-btn calc-sci" data-calc="^">xʸ</button>
+        <button type="button" class="calc-btn calc-sci" data-calc="pi">π</button>
+        <button type="button" class="calc-btn calc-sci" data-calc="e">e</button>
+        <button type="button" class="calc-btn calc-sci" data-calc="inv">1/x</button>
+      </div>
+    </div>
+
+    <div class="calc-grid">
+      <button type="button" class="calc-btn calc-op" data-calc="clear">C</button>
+      <button type="button" class="calc-btn calc-op" data-calc="back">⌫</button>
+      <button type="button" class="calc-btn calc-op" data-calc="%">%</button>
+      <button type="button" class="calc-btn calc-op" data-calc="/">÷</button>
+
+      <button type="button" class="calc-btn" data-calc="7">7</button>
+      <button type="button" class="calc-btn" data-calc="8">8</button>
+      <button type="button" class="calc-btn" data-calc="9">9</button>
+      <button type="button" class="calc-btn calc-op" data-calc="*">×</button>
+
+      <button type="button" class="calc-btn" data-calc="4">4</button>
+      <button type="button" class="calc-btn" data-calc="5">5</button>
+      <button type="button" class="calc-btn" data-calc="6">6</button>
+      <button type="button" class="calc-btn calc-op" data-calc="-">−</button>
+
+      <button type="button" class="calc-btn" data-calc="1">1</button>
+      <button type="button" class="calc-btn" data-calc="2">2</button>
+      <button type="button" class="calc-btn" data-calc="3">3</button>
+      <button type="button" class="calc-btn calc-op" data-calc="+">+</button>
+
+      <button type="button" class="calc-btn" data-calc="0" style="grid-column:span 2;">0</button>
+      <button type="button" class="calc-btn" data-calc=".">.</button>
+      <button type="button" class="calc-btn calc-eq" data-calc="=">=</button>
+    </div>
+    <button class="settings-close-btn" id="calcCloseBtn">Close</button>
+  </div>
+</div>
+
+<!-- Custom Warning Modal Popup -->
+<div id="customModalOverlay">
+  <div class="modal-box">
+    <h3 id="modalWarningTitleText">⚠️ Warning</h3>
+    <p id="modalMsg">Are you sure you want to proceed?</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="modalCancelBtn">Cancel</button>
+      <button class="btn-confirm" id="modalConfirmBtn">Yes, Unmark</button>
+    </div>
+  </div>
+</div>
+
+<!-- Daily Entry Alarm Popup -->
+<div id="alarmModalOverlay">
+  <div class="modal-box alarm">
+    <h3 id="alarmModalTitleText">🔔 Entry Reminder</h3>
+    <p id="alarmModalMsg">এখন আপনার আজকের ডিউটি / OT এন্ট্রি দেওয়ার সময় হয়েছে!</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="alarmSnoozeBtn">⏱ Snooze 10m</button>
+      <button class="btn-confirm btn-amber" id="alarmDismissBtn">✓ Dismiss</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Version Available Popup -->
+<div id="updateModalOverlay">
+  <div class="modal-box update">
+    <h3 id="updateModalTitleText">⬆️ New Update Available</h3>
+    <p><span id="updateAvailableLabelText">Version</span> <b id="updateModalVersion">-</b> <span id="updateAvailableLabelText2">is available.</span></p>
+    <p id="updateModalNotes" style="font-size:12px;"></p>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="updateLaterBtn">Later</button>
+      <button class="btn-confirm btn-primary" id="updateDownloadBtn">⬇ Update Now</button>
+    </div>
+  </div>
+</div>
+
+<!-- Export Preview Modal -->
+<div id="exportPreviewOverlay">
+  <div class="export-box">
+    <div class="export-head">
+      <h3 id="exportPreviewTitleText">📄 Export Preview</h3>
+      <button type="button" id="exportPreviewCloseX" aria-label="Close">✕</button>
+    </div>
+    <div class="export-frame-wrap">
+      <iframe id="exportPreviewFrame" title="PDF Preview"></iframe>
+      <div class="export-fallback" id="exportFallback">
+        <div class="export-fallback-icon">📄</div>
+        <div class="export-fallback-text" id="exportFallbackText">Your browser can't show the PDF inline here. Tap the button below to open it.</div>
+        <a id="exportFallbackOpenBtn" class="btn-confirm btn-primary" target="_blank" rel="noopener noreferrer">⬇ <span id="exportFallbackOpenBtnText">Open PDF</span></a>
+      </div>
+    </div>
+    <div class="export-actions">
+      <a id="exportDownloadBtn" class="btn-confirm btn-primary" download>⬇ <span id="exportDownloadBtnText">Save / Download</span></a>
+      <button type="button" class="btn-cancel" id="exportPreviewCloseBtn"><span id="exportPreviewCloseBtnText">Close</span></button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap" id="mainApp" style="display:none;">
+
+  <div class="topbar" style="position:relative;">
+    <div class="top-actions">
+      <button class="gear-btn" id="settingsBtn" type="button" aria-label="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+    </div>
+    <div class="header-titles">
+      <h1 id="mainTitleText">Monthly Duty & Payout Summary</h1>
+      <div class="header-subtitle" id="headerSubtitleText">Track Duty, OT & Estimated Earnings</div>
+    </div>
+    <div class="profile-block">
+      <div class="avatar" id="avatarInitial" title="Tap to add/change photo">
+        <span id="avatarInitialText">•</span>
+        <span class="avatar-cam-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg></span>
+      </div>
+      <input type="file" id="avatarPhotoInput" accept="image/*">
+      <div class="profile-text">
+        <div class="profile-name-row">
+          <span class="profile-name" id="infoNameText"></span>
+          <span class="profile-id" id="infoIdText"></span>
+        </div>
+        <div class="profile-meta">
+          <span id="infoCompanyText"></span>
+          <span id="infoAddressText"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card month-picker-card">
+    <div class="month-picker-row">
+      <span class="month-picker-icon">📅</span>
+      <span class="month-picker-label" id="monthPickerLabelText">Select Month & Year</span>
+      <div class="month-picker-fields">
+        <div class="mp-dropdown" id="monthDropdown">
+          <button type="button" class="mp-select mp-dropdown-btn" id="monthDropdownBtn">
+            <span id="monthDropdownLabel">Month</span>
+            <svg class="mp-dropdown-arrow" viewBox="0 0 10 6" width="10" height="6"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="mp-dropdown-list" id="monthDropdownList"></div>
+        </div>
+        <select id="monthSelect" style="display:none"></select>
+        <input type="number" id="yearInput" class="mp-select" value="2026">
+      </div>
+    </div>
+  </div>
+
+  <div class="card table-card">
+    <div class="thead-row">
+      <div id="theadDateText">DATE</div>
+      <div id="theadOTText">OT (H)</div>
+      <div id="theadNightText">NIGHT DUTY</div>
+      <div id="theadDutyText">OFF DAY DUTY</div>
+      <div id="theadDayOffText">OFF DAY</div>
+    </div>
+    <div id="dayRows"></div>
+  </div>
+
+  <div class="card">
+    <h2 id="summaryTitleText">Monthly Summary</h2>
+    <div class="summary-grid">
+      <div class="sum-chip ot"><div class="val" id="totOT">0</div><div class="lbl" id="sumOTLabelText">OT Hrs</div></div>
+      <div class="sum-chip night"><div class="val" id="totNight">0</div><div class="lbl" id="sumNightLabelText">Night</div></div>
+      <div class="sum-chip duty"><div class="val" id="totDuty">0</div><div class="lbl" id="sumDutyLabelText">Off Duty</div></div>
+      <div class="sum-chip dayoff"><div class="val" id="totDayOff">0</div><div class="lbl" id="sumDayOffLabelText">Day Off</div></div>
+    </div>
+    
+    <div class="total-display">
+      <div class="lbl" id="totalLabelText">Total Amount</div>
+      <div class="amt" id="totalAmt">0.00</div>
+    </div>
+
+    <div class="btn-row">
+      <button id="pdfBtn">⬇ <span id="pdfBtnText">Export</span></button>
+      <button id="resetBtn">🔄 <span id="resetBtnText">Reset</span></button>
+    </div>
+    <div class="status" id="statusMsg"></div>
+  </div>
+
+  <div class="legend">
+    <span class="lg-item"><span class="lg-dot" style="background:var(--violet);"></span><span id="legendNightText">Night</span></span>
+    <span class="lg-item"><span class="lg-dot" style="background:var(--sky);"></span><span id="legendDutyText">Off Duty</span></span>
+    <span class="lg-item"><span class="lg-dot" style="background:var(--rose);"></span><span id="legendDayOffText">Off Day</span></span>
+    <span class="lg-item"><span class="lg-dot" style="background:var(--amber);"></span><span id="legendComboText">Night+Duty</span></span>
+    <br><span id="legendFooterText">Thursday & Friday are Weekends • Auto-saved instantly</span>
+  </div>
+
+  <!-- App Version / Update Check -->
+  <div class="version-box">
+    <div class="version-row">
+      <span id="appVersionLabel">Version —</span>
+      <button id="checkUpdateBtn" type="button">🔄 <span id="checkUpdateBtnText">Check for Update</span></button>
+    </div>
+    <div class="version-status" id="versionStatus"></div>
+  </div>
+
+  <!-- Developer Name Tag -->
+  <div class="developer-credit">
+    <span id="devCreditLabelText">Developed by</span> <a href="https://github.com/S-Matrix-Ltd/Monthly-Duty-OT-Record" target="_blank" rel="noopener noreferrer">S-Matrix-Ltd</a>
+  </div>
+
+  <div class="copyright-tag" id="copyrightTag"></div>
+
+</div>
+
+<script>
+const monthNames = ["JANUARY","FEBRUARY","MARCH","APRIL","MAY","JUNE","JULY","AUGUST","SEPTEMBER","OCTOBER","NOVEMBER","DECEMBER"];
+const weekdayShort = ["SUN","MON","TUE","WED","THU","FRI","SAT"];
+
+// ================= Language / Theme / Translations =================
+const LANG_KEY = 'ot-lang-v1';
+const THEME_KEY = 'ot-theme-v1';
+
+const translations = {
+  bn: {
+    eyebrow:'ডিউটি ও ওটি লগ প্যানেল', mainTitle:'মাসিক ডিউটি ও পেআউট সামারি', headerSubtitle:'ডিউটি, ওটি ও আনুমানিক আয় ট্র্যাক করুন', reminderInlineLabel:'দৈনিক রিমাইন্ডার', logoutBtn:'লগআউট',
+    settingsTitle:'সেটিংস', settingsLanguageLabel:'ভাষা', settingsThemeLabel:'থিম', settingsBtnLabel:'সেটিংস',
+    settingsChangePasswordLabel:'পাসওয়ার্ড পরিবর্তন', settingsHistoryLabel:'পূর্ববর্তী মাসের হিস্ট্রি', settingsCloseBtn:'বন্ধ করুন',
+    themeIndigo:'ইন্ডিগো', themeOcean:'ওশান', themeEmerald:'এমারল্ড', themeSunset:'সানসেট', themePurple:'পার্পল', themeDark:'ডার্ক',
+    curPassPlaceholder:'বর্তমান পাসওয়ার্ড', newPassPlaceholder:'নতুন পাসওয়ার্ড (৪-১২ অক্ষর/সংখ্যা)', newPassConfirmPlaceholder:'নতুন পাসওয়ার্ড নিশ্চিত করুন',
+    changePassBtn:'পাসওয়ার্ড আপডেট করুন', changePassSuccess:'✓ পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে', changePassWrongCurrent:'বর্তমান পাসওয়ার্ড ভুল',
+    changePassMismatch:'নতুন পাসওয়ার্ড মিলছে না', changePassInvalid:'পাসওয়ার্ড অবশ্যই ৪-১২ অক্ষর/সংখ্যা হতে হবে',
+    historyEmpty:'কোনো সংরক্ষিত মাস পাওয়া যায়নি', historyLoadBtn:'লোড করুন',
+    reminderCardTitle:'⏰ দৈনিক এন্ট্রি রিমাইন্ডার', reminderTestBtn:'টেস্ট', monthPickerLabel:'মাস ও বছর নির্বাচন করুন',
+    reminderNoteOn:t=>`প্রতিদিন ${t} সময়ে রিমাইন্ডার চালু আছে — তবে এই পেজ/ট্যাব ব্রাউজারে খোলা ও স্ক্রিন আনলক থাকতে হবে, নাহলে মোবাইল ব্রাউজার টাইমার বন্ধ করে দেয়।`,
+    reminderNoteOff:'প্রতিদিন এন্ট্রি দেওয়ার জন্য একটি রিমাইন্ডার সেট করুন।',
+    rateSettingsTitle:'কনফিগারেশন ও রেট', rateOTLabel:'ওটি / ঘন্টা', rateNightLabel:'নাইট ডিউটি', rateOFFLabel:'অফ ডে ডিউটি',
+    rateHint:'⚠ রেট পরিবর্তন করতে নিশ্চিতকরণ প্রয়োজন',
+    rateChangeConfirm:(l,p,n)=>`"${l}" রেট ${p||0} থেকে ${n||0} তে পরিবর্তন করবেন?`,
+    theadDate:'তারিখ', theadOT:'ওটি (ঘ)', theadNight:'নাইট ডিউটি', theadDuty:'অফ ডে ডিউটি', theadDayOff:'অফ ডে',
+    summaryTitle:'মাসিক সারাংশ', sumOTLabel:'ওটি ঘন্টা', sumNightLabel:'নাইট', sumDutyLabel:'অফ ডিউটি', sumDayOffLabel:'ডে অফ',
+    totalLabel:'মোট পরিমাণ', pdfBtn:'এক্সপোর্ট', resetBtn:'রিসেট',
+    legendNight:'নাইট', legendDuty:'অফ ডিউটি', legendDayOff:'অফ ডে', legendFooter:'বৃহস্পতি ও শুক্রবার সাপ্তাহিক ছুটি • স্বয়ংক্রিয়ভাবে সংরক্ষিত হয়',
+    checkUpdateBtn:'আপডেট চেক করুন', devCreditLabel:'ডেভেলপার',
+    statusPdfDownloaded:'✓ প্রিভিউ তৈরি হয়েছে (রিসেট আনলক)', statusDataReset:'✓ ডেটা সফলভাবে রিসেট হয়েছে',
+    exportPreviewTitle:'📄 এক্সপোর্ট প্রিভিউ', exportDownloadBtn:'⬇ সেভ / ডাউনলোড', exportPreviewCloseBtn:'বন্ধ করুন',
+    exportFallbackText:'আপনার ব্রাউজারে পিডিএফ সরাসরি দেখানো যাচ্ছে না। নিচের বাটনে চাপ দিয়ে খুলুন।', exportFallbackOpenBtn:'⬇ পিডিএফ খুলুন',
+    unmarkConfirmMsg:'আপনি কি এই অপশনটি আনমার্ক করতে চান?',
+    resetNoPdfConfirmMsg:'আপনি এখনো এই মাসের পিডিএফ এক্সপোর্ট করেননি। আপনি কি নিশ্চিত রিসেট করতে চান?',
+    resetConfirmMsg:'আপনি কি এই মাসের সব ডেটা রিসেট করতে চান?',
+    modalWarningTitle:'⚠️ সতর্কতা', modalCancelBtn:'বাতিল', modalConfirmYesUnmark:'হ্যাঁ, আনমার্ক করুন',
+    alarmModalTitle:'🔔 এন্ট্রি রিমাইন্ডার', alarmModalMsg:'এখন আপনার আজকের ডিউটি / ওটি এন্ট্রি দেওয়ার সময় হয়েছে!',
+    alarmSnoozeBtn:'⏱ ১০ মিনিট স্নুজ', alarmDismissBtn:'✓ বাতিল করুন',
+    updateModalTitle:'⬆️ নতুন আপডেট উপলব্ধ', updateAvailableLabel:'ভার্সন', updateAvailableLabel2:'উপলব্ধ আছে।',
+    updateLaterBtn:'পরে', updateDownloadBtn:'⬇ এখন আপডেট করুন',
+    versionNotSet:'আপডেট চেক লিংক এখনো সেট করা হয়নি।', versionChecking:'চেক করা হচ্ছে...',
+    versionFoundNew:v=>`✓ নতুন ভার্সন ${v} পাওয়া গেছে!`, versionLatest:'✓ আপনি সর্বশেষ ভার্সন ব্যবহার করছেন।',
+    versionCheckFailed:'⚠ আপডেট চেক করা যায়নি (নেটওয়ার্ক/লিংক সমস্যা)।',
+    authLoginTitle:'লগইন', authCreateTitle:'নতুন লগইন তৈরি করুন',
+    authSubLogin:'আপনার ইউজার আইডি ও পাসওয়ার্ড দিন', authSubCreate:'প্রথমবার ব্যবহার করছেন — নতুন ইউজার আইডি ও পাসওয়ার্ড (৪-১২ অক্ষর/সংখ্যা) সেট করুন',
+    authNamePlaceholder:'আপনার নাম', authUserPlaceholder:'ইউজার আইডি', authPassPlaceholder:'পাসওয়ার্ড (৪-১২ অক্ষর/সংখ্যা)', authPassConfirmPlaceholder:'পাসওয়ার্ড নিশ্চিত করুন',
+    authCompanyNamePlaceholder:'কোম্পানির নাম', authCompanyAddressPlaceholder:'কোম্পানির ঠিকানা',
+    authSubmitLogin:'লগইন', authSubmitCreate:'তৈরি করুন ও এগিয়ে যান',
+    welcomeBack:n=>`স্বাগতম, ${n}! 👋`,
+    rateGrossLabel:'গ্রস', settingsCalculatorLabel:'ক্যালকুলেটর', openCalcBtn:'ক্যালকুলেটর খুলুন', calcTitle:'ক্যালকুলেটর',
+    dayoffBlockedMsg:'অফ ডে মার্ক করা থাকলে অন্য কোনো অপশন সিলেক্ট করা যাবে না।',
+    pdfCompanyLabel:'কোম্পানি', pdfAddressLabel:'ঠিকানা', pdfNameLabel:'নাম', pdfIdLabel:'আইডি', pdfGrossLabel:'গ্রস',
+    settingsSaveBtn:'সংরক্ষণ করুন', settingsBackBtn:'পিছনে যান', settingsSavedMsg:'✓ সেটিংস সংরক্ষিত হয়েছে',
+    authErrNoUser:'ইউজার আইডি দিন।', authErrNoName:'আপনার নাম দিন।', authErrBadPass:'পাসওয়ার্ড অবশ্যই ৪-১২ অক্ষর/সংখ্যা হতে হবে।',
+    authErrPassMismatch:'পাসওয়ার্ড মিলছে না।', authErrWrongCred:'ভুল ইউজার আইডি অথবা পাসওয়ার্ড।',
+    authErrNoSecA:'একটি সিকিউরিটি প্রশ্ন ও উত্তর দিন।',
+    authResetLink:'অ্যাকাউন্ট রিসেট করুন (নতুন আইডি/পাসওয়ার্ড সেট করতে)', authForgotLink:'পাসওয়ার্ড ভুলে গেছেন?',
+    secQuestionLabel:'সিকিউরিটি প্রশ্ন', secAPlaceholder:'আপনার উত্তর',
+    secQOptions:['আপনার প্রিয় রং কী?','আপনার জন্মস্থান/গ্রামের নাম কী?','আপনার প্রিয় খাবার কী?','আপনার প্রথম কর্মস্থলের নাম কী?'],
+    forgotTitle:'পাসওয়ার্ড রিকভারি', forgotUserPlaceholder:'ইউজার আইডি দিন', forgotStep1BtnLabel:'পরবর্তী',
+    forgotNoAccountErr:'এই ইউজার আইডি দিয়ে কোনো অ্যাকাউন্ট পাওয়া যায়নি।',
+    forgotQuestionPrefix:'সিকিউরিটি প্রশ্ন:', forgotAnswerPlaceholder:'উত্তর লিখুন', forgotStep2BtnLabel:'যাচাই করুন',
+    forgotWrongAnswerErr:'উত্তর সঠিক নয়।', forgotNoSecQErr:'এই অ্যাকাউন্টে কোনো সিকিউরিটি প্রশ্ন সেট নেই। "অ্যাকাউন্ট রিসেট" ব্যবহার করুন।',
+    forgotNewPassPlaceholder:'নতুন পাসওয়ার্ড (৪-১২ অক্ষর/সংখ্যা)', forgotNewPassConfirmPlaceholder:'নতুন পাসওয়ার্ড নিশ্চিত করুন',
+    forgotStep3BtnLabel:'পাসওয়ার্ড রিসেট করুন', forgotSuccessMsg:'✓ পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে! এখন লগইন করুন।', forgotCloseBtn:'বাতিল'
+  },
+  en: {
+    eyebrow:'Duty & OT Log Panel', mainTitle:'Monthly Duty & Payout Summary', headerSubtitle:'Track Duty, OT & Estimated Earnings', reminderInlineLabel:'Daily Reminder', logoutBtn:'Logout',
+    settingsTitle:'Settings', settingsLanguageLabel:'Language', settingsThemeLabel:'Theme', settingsBtnLabel:'Settings',
+    settingsChangePasswordLabel:'Change Password', settingsHistoryLabel:'Previous Month History', settingsCloseBtn:'Close',
+    themeIndigo:'Indigo', themeOcean:'Ocean', themeEmerald:'Emerald', themeSunset:'Sunset', themePurple:'Purple', themeDark:'Dark',
+    curPassPlaceholder:'Current Password', newPassPlaceholder:'New Password (4-12 letters/digits)', newPassConfirmPlaceholder:'Confirm New Password',
+    changePassBtn:'Update Password', changePassSuccess:'✓ Password changed successfully', changePassWrongCurrent:'Current password is incorrect',
+    changePassMismatch:'New passwords do not match', changePassInvalid:'Password must be 4-12 letters/digits',
+    historyEmpty:'No saved months found', historyLoadBtn:'Load',
+    reminderCardTitle:'⏰ Daily Entry Reminder', reminderTestBtn:'Test', monthPickerLabel:'Select Month & Year',
+    reminderNoteOn:t=>`Reminder is active daily at ${t} — the page/tab must stay open and the screen unlocked, otherwise mobile browsers stop timers.`,
+    reminderNoteOff:'Set a daily reminder to log your duty entries.',
+    rateSettingsTitle:'Configuration & Rates', rateOTLabel:'OT / Hr', rateNightLabel:'Night Duty', rateOFFLabel:'Off Day Duty',
+    rateHint:'⚠ Changing a rate requires confirmation',
+    rateChangeConfirm:(l,p,n)=>`Change "${l}" rate from ${p||0} to ${n||0}?`,
+    theadDate:'DATE', theadOT:'OT (H)', theadNight:'NIGHT DUTY', theadDuty:'OFF DAY DUTY', theadDayOff:'OFF DAY',
+    summaryTitle:'Monthly Summary', sumOTLabel:'OT Hrs', sumNightLabel:'Night', sumDutyLabel:'Off Duty', sumDayOffLabel:'Day Off',
+    totalLabel:'Total Amount', pdfBtn:'Export', resetBtn:'Reset',
+    legendNight:'Night', legendDuty:'Off Duty', legendDayOff:'Off Day', legendFooter:'Thursday & Friday are Weekends • Auto-saved instantly',
+    checkUpdateBtn:'Check for Update', devCreditLabel:'Developed by',
+    statusPdfDownloaded:'✓ Preview ready (reset unlocked)', statusDataReset:'✓ Data reset successfully',
+    exportPreviewTitle:'📄 Export Preview', exportDownloadBtn:'⬇ Save / Download', exportPreviewCloseBtn:'Close',
+    exportFallbackText:'Your browser can\'t show the PDF inline here. Tap the button below to open it.', exportFallbackOpenBtn:'⬇ Open PDF',
+    unmarkConfirmMsg:'Are you sure you want to unmark this option?',
+    resetNoPdfConfirmMsg:'You have not exported the PDF for this month yet. Are you sure you want to reset?',
+    resetConfirmMsg:'Are you sure you want to reset all data for this month?',
+    modalWarningTitle:'⚠️ Warning', modalCancelBtn:'Cancel', modalConfirmYesUnmark:'Yes, Unmark',
+    alarmModalTitle:'🔔 Entry Reminder', alarmModalMsg:'It is now time to log today\'s duty / OT entry!',
+    alarmSnoozeBtn:'⏱ Snooze 10m', alarmDismissBtn:'✓ Dismiss',
+    updateModalTitle:'⬆️ New Update Available', updateAvailableLabel:'Version', updateAvailableLabel2:'is available.',
+    updateLaterBtn:'Later', updateDownloadBtn:'⬇ Update Now',
+    versionNotSet:'The update check link has not been set yet.', versionChecking:'Checking...',
+    versionFoundNew:v=>`✓ New version ${v} found!`, versionLatest:'✓ You are using the latest version.',
+    versionCheckFailed:'⚠ Could not check for updates (network/link issue).',
+    authLoginTitle:'Login', authCreateTitle:'Create Login',
+    authSubLogin:'Enter your User ID and password', authSubCreate:'First time here — set a new User ID and password (4-12 letters/digits)',
+    authNamePlaceholder:'Full Name', authUserPlaceholder:'User ID', authPassPlaceholder:'Password (4-12 letters/digits)', authPassConfirmPlaceholder:'Confirm Password',
+    authCompanyNamePlaceholder:'Company Name', authCompanyAddressPlaceholder:'Company Address',
+    authSubmitLogin:'Login', authSubmitCreate:'Create & Continue',
+    welcomeBack:n=>`Welcome back, ${n}! 👋`,
+    rateGrossLabel:'Gross', settingsCalculatorLabel:'Calculator', openCalcBtn:'Open Calculator', calcTitle:'Calculator',
+    dayoffBlockedMsg:'No other option can be selected while Off Day is marked.',
+    pdfCompanyLabel:'Company', pdfAddressLabel:'Address', pdfNameLabel:'Name', pdfIdLabel:'ID', pdfGrossLabel:'Gross',
+    settingsSaveBtn:'Save', settingsBackBtn:'Back', settingsSavedMsg:'✓ Settings saved',
+    authErrNoUser:'Please enter a User ID.', authErrNoName:'Please enter your name.', authErrBadPass:'Password must be 4-12 letters/digits.',
+    authErrPassMismatch:'Passwords do not match.', authErrWrongCred:'Incorrect User ID or password.',
+    authErrNoSecA:'Please choose a security question and give an answer.',
+    authResetLink:'Reset account (set a new ID/password)', authForgotLink:'Forgot password?',
+    secQuestionLabel:'Security Question', secAPlaceholder:'Your Answer',
+    secQOptions:['What is your favorite color?','What is your hometown/village?','What is your favorite food?','What was your first workplace?'],
+    forgotTitle:'Password Recovery', forgotUserPlaceholder:'Enter your User ID', forgotStep1BtnLabel:'Next',
+    forgotNoAccountErr:'No account found with this User ID.',
+    forgotQuestionPrefix:'Security Question:', forgotAnswerPlaceholder:'Type your answer', forgotStep2BtnLabel:'Verify',
+    forgotWrongAnswerErr:'The answer is incorrect.', forgotNoSecQErr:'No security question is set for this account. Please use "Reset account" instead.',
+    forgotNewPassPlaceholder:'New Password (4-12 letters/digits)', forgotNewPassConfirmPlaceholder:'Confirm New Password',
+    forgotStep3BtnLabel:'Reset Password', forgotSuccessMsg:'✓ Password changed successfully! Please login now.', forgotCloseBtn:'Cancel'
+  }
+};
+
+let currentLang = localStorage.getItem(LANG_KEY) || 'en';
+let currentTheme = localStorage.getItem(THEME_KEY) || 'indigo';
+
+function T(){ return translations[currentLang] || translations.en; }
+
+function setText(id, val){ const el = document.getElementById(id); if(el) el.textContent = val; }
+function setPlaceholder(id, val){ const el = document.getElementById(id); if(el) el.placeholder = val; }
+
+function applyLanguage(lang){
+  currentLang = translations[lang] ? lang : 'en';
+  localStorage.setItem(LANG_KEY, currentLang);
+  const t = T();
+
+  setText('eyebrowText', t.eyebrow); setText('mainTitleText', t.mainTitle); setText('logoutBtnText', t.logoutBtn);
+  setText('headerSubtitleText', t.headerSubtitle); setText('reminderInlineLabelText', t.reminderInlineLabel);
+  setText('settingsTitleText', t.settingsTitle); setText('settingsLanguageLabelText', t.settingsLanguageLabel);
+  setText('settingsBtnText', t.settingsBtnLabel);
+  setText('settingsThemeLabelText', t.settingsThemeLabel); setText('settingsChangePasswordLabelText', t.settingsChangePasswordLabel);
+  setText('settingsHistoryLabelText', t.settingsHistoryLabel);
+  setText('settingsBackBtnText', t.settingsBackBtn); setText('settingsSaveBtnText', t.settingsSaveBtn);
+  setText('themeLabelIndigo', t.themeIndigo); setText('themeLabelOcean', t.themeOcean); setText('themeLabelEmerald', t.themeEmerald);
+  setText('themeLabelSunset', t.themeSunset); setText('themeLabelPurple', t.themePurple); setText('themeLabelDark', t.themeDark);
+  setPlaceholder('authName', t.authNamePlaceholder);
+  setPlaceholder('curPassInput', t.curPassPlaceholder); setPlaceholder('newPassInput', t.newPassPlaceholder);
+  setPlaceholder('newPassConfirmInput', t.newPassConfirmPlaceholder); setText('changePassBtn', t.changePassBtn);
+  setText('reminderCardTitleText', t.reminderCardTitle); setText('reminderTestBtnText', t.reminderTestBtn);
+  setText('monthPickerLabelText', t.monthPickerLabel);
+  setText('rateSettingsTitleText', t.rateSettingsTitle); setText('rateOTLabelText', t.rateOTLabel);
+  setText('rateNightLabelText', t.rateNightLabel); setText('rateOFFLabelText', t.rateOFFLabel); setText('rateHintText', t.rateHint);
+  setText('rateGrossLabelText', t.rateGrossLabel);
+  setText('settingsCalculatorLabelText', t.settingsCalculatorLabel); setText('openCalcBtnText', t.openCalcBtn);
+  setText('calcTitleText', t.calcTitle);
+  setPlaceholder('authCompanyName', t.authCompanyNamePlaceholder); setPlaceholder('authCompanyAddress', t.authCompanyAddressPlaceholder);
+  updateCompanyInfoDisplay();
+  setText('theadDateText', t.theadDate); setText('theadOTText', t.theadOT); setText('theadNightText', t.theadNight);
+  setText('theadDutyText', t.theadDuty); setText('theadDayOffText', t.theadDayOff);
+  setText('summaryTitleText', t.summaryTitle); setText('sumOTLabelText', t.sumOTLabel); setText('sumNightLabelText', t.sumNightLabel);
+  setText('sumDutyLabelText', t.sumDutyLabel); setText('sumDayOffLabelText', t.sumDayOffLabel); setText('totalLabelText', t.totalLabel);
+  setText('pdfBtnText', t.pdfBtn); setText('resetBtnText', t.resetBtn);
+  setText('legendNightText', t.legendNight); setText('legendDutyText', t.legendDuty); setText('legendDayOffText', t.legendDayOff);
+  setText('legendFooterText', t.legendFooter); setText('checkUpdateBtnText', t.checkUpdateBtn); setText('devCreditLabelText', t.devCreditLabel);
+  setText('modalWarningTitleText', t.modalWarningTitle); setText('modalCancelBtn', t.modalCancelBtn);
+  setText('modalConfirmBtn', t.modalConfirmYesUnmark);
+  setText('alarmModalTitleText', t.alarmModalTitle); setText('alarmModalMsg', t.alarmModalMsg);
+  setText('alarmSnoozeBtn', t.alarmSnoozeBtn); setText('alarmDismissBtn', t.alarmDismissBtn);
+  setText('updateModalTitleText', t.updateModalTitle); setText('updateAvailableLabelText', t.updateAvailableLabel);
+  setText('updateAvailableLabelText2', t.updateAvailableLabel2); setText('updateLaterBtn', t.updateLaterBtn);
+  setText('updateDownloadBtn', t.updateDownloadBtn);
+  setText('exportPreviewTitleText', t.exportPreviewTitle); setText('exportDownloadBtnText', t.exportDownloadBtn);
+  setText('exportPreviewCloseBtnText', t.exportPreviewCloseBtn);
+  setText('exportFallbackText', t.exportFallbackText); setText('exportFallbackOpenBtnText', t.exportFallbackOpenBtn);
+  setText('secQuestionLabelText', t.secQuestionLabel); setPlaceholder('authSecA', t.secAPlaceholder);
+  setText('forgotTitleText', t.forgotTitle); setPlaceholder('forgotUser', t.forgotUserPlaceholder);
+  setText('forgotStep1Btn', t.forgotStep1BtnLabel); setPlaceholder('forgotAnswer', t.forgotAnswerPlaceholder);
+  setText('forgotStep2Btn', t.forgotStep2BtnLabel); setPlaceholder('forgotNewPass', t.forgotNewPassPlaceholder);
+  setPlaceholder('forgotNewPassConfirm', t.forgotNewPassConfirmPlaceholder); setText('forgotStep3Btn', t.forgotStep3BtnLabel);
+  setText('forgotCloseBtn', t.forgotCloseBtn);
+
+  // Security question dropdown options
+  const secQSelect = document.getElementById('authSecQ');
+  if(secQSelect){
+    const prevIdx = secQSelect.value;
+    secQSelect.innerHTML = '';
+    t.secQOptions.forEach((q,i)=>{
+      const opt = document.createElement('option'); opt.value = i; opt.textContent = q;
+      secQSelect.appendChild(opt);
+    });
+    if(prevIdx !== '') secQSelect.value = prevIdx;
+  }
+
+  // Auth screen title/sub/buttons depend on login vs setup mode
+  refreshAuthTexts();
+  if(typeof updateReminderNote === 'function') updateReminderNote();
+  if(typeof renderHistoryList === 'function') renderHistoryList();
+  if(typeof updateWelcomeGreeting === 'function') updateWelcomeGreeting();
+
+  const langSelect = document.getElementById('languageSelect');
+  if(langSelect) langSelect.value = currentLang;
+}
+
+function applyTheme(theme){
+  const valid = ['indigo','ocean','emerald','sunset','purple','dark'];
+  currentTheme = valid.includes(theme) ? theme : 'indigo';
+  localStorage.setItem(THEME_KEY, currentTheme);
+  valid.forEach(th=> document.body.classList.remove('theme-'+th));
+  if(currentTheme !== 'indigo') document.body.classList.add('theme-'+currentTheme);
+  document.querySelectorAll('.theme-swatch').forEach(sw=>{
+    sw.classList.toggle('active', sw.dataset.theme === currentTheme);
+  });
+}
+
+// ---------- Login / Auth System ----------
+const AUTH_KEY = 'ot-auth-account-v1';
+const AUTH_SESSION_KEY = 'ot-auth-session-v1';
+
+const authOverlay = document.getElementById('authOverlay');
+const mainApp = document.getElementById('mainApp');
+const authTitle = document.getElementById('authTitle');
+const authSub = document.getElementById('authSub');
+const authName = document.getElementById('authName');
+const authCompanyName = document.getElementById('authCompanyName');
+const authCompanyAddress = document.getElementById('authCompanyAddress');
+const authUser = document.getElementById('authUser');
+const authPass = document.getElementById('authPass');
+const authPassConfirm = document.getElementById('authPassConfirm');
+const authError = document.getElementById('authError');
+const authSubmitBtn = document.getElementById('authSubmitBtn');
+const authResetLink = document.getElementById('authResetLink');
+const authForgotLink = document.getElementById('authForgotLink');
+const secQRow = document.getElementById('secQRow');
+const authSecQ = document.getElementById('authSecQ');
+const authSecA = document.getElementById('authSecA');
+const logoutBtn = document.getElementById('logoutBtn');
+
+function getAccount(){
+  try{ return JSON.parse(localStorage.getItem(AUTH_KEY) || 'null'); }catch(e){ return null; }
+}
+
+function isValidPassword(p){
+  return /^[A-Za-z0-9]{4,12}$/.test(p);
+}
+
+function showApp(){
+  authOverlay.style.display = 'none';
+  mainApp.style.display = 'block';
+  updateWelcomeGreeting();
+  setTimeout(()=>{ if(typeof checkForUpdate === 'function') checkForUpdate(false); }, 2000);
+}
+
+function updateCompanyInfoDisplay(){
+  const account = getAccount();
+  const nameEl = document.getElementById('infoNameText');
+  const companyEl = document.getElementById('infoCompanyText');
+  const idEl = document.getElementById('infoIdText');
+  const addrEl = document.getElementById('infoAddressText');
+  const avatarEl = document.getElementById('avatarInitial');
+  const avatarTextEl = document.getElementById('avatarInitialText');
+  const avatarCamBadge = document.querySelector('.avatar-cam-badge');
+  if(!nameEl) return;
+  if(account){
+    const displayName = account.name || account.user || '';
+    nameEl.textContent = displayName;
+    if(avatarTextEl) avatarTextEl.textContent = displayName ? displayName.trim().charAt(0).toUpperCase() : '•';
+    if(avatarEl){
+      if(account.photo){
+        avatarEl.style.backgroundImage = `url(${account.photo})`;
+        if(avatarTextEl) avatarTextEl.style.display = 'none';
+        if(avatarCamBadge) avatarCamBadge.style.display = 'none';
+      } else {
+        avatarEl.style.backgroundImage = '';
+        if(avatarTextEl) avatarTextEl.style.display = '';
+        if(avatarCamBadge) avatarCamBadge.style.display = '';
+      }
+    }
+    companyEl.textContent = account.companyName || '';
+    idEl.textContent = account.user ? (T().pdfIdLabel || 'ID') + ': ' + account.user : '';
+    addrEl.textContent = account.companyAddress || '';
+  } else {
+    nameEl.textContent = ''; companyEl.textContent = ''; idEl.textContent = ''; addrEl.textContent = '';
+    if(avatarTextEl){ avatarTextEl.textContent = '•'; avatarTextEl.style.display = ''; }
+    if(avatarEl) avatarEl.style.backgroundImage = '';
+    if(avatarCamBadge) avatarCamBadge.style.display = '';
+  }
+}
+// Backwards-compatible alias
+function updateWelcomeGreeting(){ updateCompanyInfoDisplay(); }
+
+// ---------- Profile Photo Upload ----------
+const avatarPhotoInput = document.getElementById('avatarPhotoInput');
+const avatarInitialEl = document.getElementById('avatarInitial');
+if(avatarInitialEl && avatarPhotoInput){
+  avatarInitialEl.addEventListener('click', ()=>{
+    if(!getAccount()) return; // only relevant once logged in
+    avatarPhotoInput.click();
+  });
+  avatarPhotoInput.addEventListener('change', ()=>{
+    const file = avatarPhotoInput.files && avatarPhotoInput.files[0];
+    if(!file) return;
+    if(!file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      const account = getAccount();
+      if(!account) return;
+      account.photo = reader.result;
+      localStorage.setItem(AUTH_KEY, JSON.stringify(account));
+      updateCompanyInfoDisplay();
+    };
+    reader.readAsDataURL(file);
+    avatarPhotoInput.value = '';
+  });
+}
+
+
+function refreshAuthTexts(){
+  const account = getAccount();
+  const t = T();
+  setPlaceholder('authName', t.authNamePlaceholder);
+  setPlaceholder('authUser', t.authUserPlaceholder);
+  setPlaceholder('authPass', t.authPassPlaceholder);
+  setPlaceholder('authPassConfirm', t.authPassConfirmPlaceholder);
+  setText('authResetLink', t.authResetLink);
+  setText('authForgotLink', t.authForgotLink);
+  if(account){
+    authTitle.textContent = t.authLoginTitle;
+    authSub.textContent = t.authSubLogin;
+    authSubmitBtn.textContent = t.authSubmitLogin;
+    if(authName) authName.style.display = 'none';
+    if(authCompanyName) authCompanyName.style.display = 'none';
+    if(authCompanyAddress) authCompanyAddress.style.display = 'none';
+    authPassConfirm.style.display = 'none';
+    if(secQRow) secQRow.style.display = 'none';
+  } else {
+    authTitle.textContent = t.authCreateTitle;
+    authSub.textContent = t.authSubCreate;
+    authSubmitBtn.textContent = t.authSubmitCreate;
+    if(authName) authName.style.display = 'block';
+    if(authCompanyName) authCompanyName.style.display = 'block';
+    if(authCompanyAddress) authCompanyAddress.style.display = 'block';
+    authPassConfirm.style.display = 'block';
+    if(secQRow) secQRow.style.display = 'block';
+  }
+}
+
+function showAuthScreen(){
+  authError.textContent = '';
+  if(authName) authName.value = '';
+  if(authCompanyName) authCompanyName.value = '';
+  if(authCompanyAddress) authCompanyAddress.value = '';
+  authUser.value = '';
+  authPass.value = '';
+  authPassConfirm.value = '';
+  if(authSecA) authSecA.value = '';
+  refreshAuthTexts();
+  authOverlay.style.display = 'flex';
+  mainApp.style.display = 'none';
+}
+
+function handleAuthSubmit(){
+  const account = getAccount();
+  const t = T();
+  const u = authUser.value.trim();
+  const p = authPass.value;
+
+  if(!u){ authError.textContent = t.authErrNoUser; return; }
+  if(!isValidPassword(p)){ authError.textContent = t.authErrBadPass; return; }
+
+  if(account){
+    // LOGIN mode
+    if(u === account.user && p === account.pass){
+      localStorage.setItem(AUTH_SESSION_KEY, '1');
+      showApp();
+    } else {
+      authError.textContent = t.authErrWrongCred;
+    }
+  } else {
+    // SETUP mode
+    const name = (authName && authName.value || '').trim();
+    if(!name){ authError.textContent = t.authErrNoName; return; }
+    const companyName = (authCompanyName && authCompanyName.value || '').trim();
+    const companyAddress = (authCompanyAddress && authCompanyAddress.value || '').trim();
+    const confirmP = authPassConfirm.value;
+    if(p !== confirmP){ authError.textContent = t.authErrPassMismatch; return; }
+    const secA = (authSecA.value || '').trim();
+    if(!secA){ authError.textContent = t.authErrNoSecA; return; }
+    localStorage.setItem(AUTH_KEY, JSON.stringify({
+      user:u, pass:p, name:name, companyName:companyName, companyAddress:companyAddress,
+      secQIndex: parseInt(authSecQ.value)||0, secA: secA.toLowerCase()
+    }));
+    localStorage.setItem(AUTH_SESSION_KEY, '1');
+    showApp();
+  }
+}
+
+authSubmitBtn.addEventListener('click', handleAuthSubmit);
+[authName, authCompanyName, authCompanyAddress, authUser, authPass, authPassConfirm, authSecA].forEach(el=>{
+  el.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') handleAuthSubmit(); });
+});
+
+authResetLink.addEventListener('click', ()=>{
+  if(confirm('সব লগইন তথ্য মুছে নতুন করে আইডি/পাসওয়ার্ড সেট করতে চান? (আপনার ডিউটি/OT ডেটা মুছে যাবে না) / Reset all login info and set a new ID/password? (Your duty/OT data will NOT be deleted)')){
+    localStorage.removeItem(AUTH_KEY);
+    localStorage.removeItem(AUTH_SESSION_KEY);
+    showAuthScreen();
+  }
+});
+
+logoutBtn.addEventListener('click', ()=>{
+  document.getElementById('settingsOverlay').classList.remove('open');
+  localStorage.removeItem(AUTH_SESSION_KEY);
+  showAuthScreen();
+});
+
+// ---------- Forgot Password ----------
+const forgotOverlay = document.getElementById('forgotOverlay');
+const forgotStep1 = document.getElementById('forgotStep1');
+const forgotStep2 = document.getElementById('forgotStep2');
+const forgotStep3 = document.getElementById('forgotStep3');
+const forgotUser = document.getElementById('forgotUser');
+const forgotAnswer = document.getElementById('forgotAnswer');
+const forgotNewPass = document.getElementById('forgotNewPass');
+const forgotNewPassConfirm = document.getElementById('forgotNewPassConfirm');
+const forgotQuestionDisplay = document.getElementById('forgotQuestionDisplay');
+let forgotAccountRef = null;
+
+function openForgotFlow(){
+  forgotAccountRef = null;
+  forgotUser.value = ''; forgotAnswer.value = ''; forgotNewPass.value = ''; forgotNewPassConfirm.value = '';
+  document.getElementById('forgotStep1Msg').textContent = '';
+  document.getElementById('forgotStep2Msg').textContent = '';
+  document.getElementById('forgotStep3Msg').textContent = '';
+  [forgotStep1, forgotStep2, forgotStep3].forEach(s=>s.classList.remove('active'));
+  forgotStep1.classList.add('active');
+  forgotOverlay.style.display = 'flex';
+}
+
+authForgotLink.addEventListener('click', openForgotFlow);
+document.getElementById('forgotCloseBtn').addEventListener('click', ()=>{ forgotOverlay.style.display = 'none'; });
+
+document.getElementById('forgotStep1Btn').addEventListener('click', ()=>{
+  const t = T();
+  const u = forgotUser.value.trim();
+  const account = getAccount();
+  const msgEl = document.getElementById('forgotStep1Msg');
+  if(!account || account.user !== u){ msgEl.textContent = t.forgotNoAccountErr; msgEl.className = 'settings-msg error'; return; }
+  if(account.secQIndex === undefined || !account.secA){
+    msgEl.textContent = t.forgotNoSecQErr; msgEl.className = 'settings-msg error'; return;
+  }
+  forgotAccountRef = account;
+  forgotQuestionDisplay.textContent = t.forgotQuestionPrefix + ' ' + (t.secQOptions[account.secQIndex] || '');
+  forgotStep1.classList.remove('active');
+  forgotStep2.classList.add('active');
+});
+
+document.getElementById('forgotStep2Btn').addEventListener('click', ()=>{
+  const t = T();
+  const ans = (forgotAnswer.value || '').trim().toLowerCase();
+  const msgEl = document.getElementById('forgotStep2Msg');
+  if(!forgotAccountRef || ans !== forgotAccountRef.secA){ msgEl.textContent = t.forgotWrongAnswerErr; msgEl.className = 'settings-msg error'; return; }
+  forgotStep2.classList.remove('active');
+  forgotStep3.classList.add('active');
+});
+
+document.getElementById('forgotStep3Btn').addEventListener('click', ()=>{
+  const t = T();
+  const msgEl = document.getElementById('forgotStep3Msg');
+  const p1 = forgotNewPass.value, p2 = forgotNewPassConfirm.value;
+  if(!isValidPassword(p1)){ msgEl.textContent = t.changePassInvalid; msgEl.className = 'settings-msg error'; return; }
+  if(p1 !== p2){ msgEl.textContent = t.changePassMismatch; msgEl.className = 'settings-msg error'; return; }
+  const account = getAccount();
+  account.pass = p1;
+  localStorage.setItem(AUTH_KEY, JSON.stringify(account));
+  msgEl.textContent = t.forgotSuccessMsg; msgEl.className = 'settings-msg success';
+  setTimeout(()=>{ forgotOverlay.style.display = 'none'; showAuthScreen(); }, 1400);
+});
+
+// ---------- Settings Menu ----------
+const settingsOverlay = document.getElementById('settingsOverlay');
+const settingsBtn = document.getElementById('settingsBtn');
+const languageSelect = document.getElementById('languageSelect');
+
+settingsBtn.addEventListener('click', ()=>{
+  applyLanguage(currentLang);
+  renderHistoryList();
+  const saveMsg = document.getElementById('settingsSaveMsg');
+  if(saveMsg) saveMsg.textContent = '';
+  settingsOverlay.classList.add('open');
+});
+document.getElementById('settingsBackBtn').addEventListener('click', ()=>{ settingsOverlay.classList.remove('open'); });
+settingsOverlay.addEventListener('click', (e)=>{
+  if(e.target === settingsOverlay) settingsOverlay.classList.remove('open');
+});
+document.getElementById('settingsSaveBtn').addEventListener('click', ()=>{
+  // Language & theme are already saved instantly on change; this confirms
+  // the changes and returns the user to the home page.
+  const saveMsg = document.getElementById('settingsSaveMsg');
+  const t = T();
+  if(saveMsg){
+    saveMsg.textContent = t.settingsSavedMsg;
+    saveMsg.className = 'settings-msg success';
+  }
+  setTimeout(()=>{ settingsOverlay.classList.remove('open'); }, 700);
+});
+
+languageSelect.addEventListener('change', ()=>{ applyLanguage(languageSelect.value); });
+
+document.querySelectorAll('.theme-swatch').forEach(sw=>{
+  sw.addEventListener('click', ()=> applyTheme(sw.dataset.theme));
+});
+
+document.getElementById('changePassBtn').addEventListener('click', ()=>{
+  const t = T();
+  const msgEl = document.getElementById('changePassMsg');
+  const account = getAccount();
+  const cur = document.getElementById('curPassInput').value;
+  const p1 = document.getElementById('newPassInput').value;
+  const p2 = document.getElementById('newPassConfirmInput').value;
+  if(!account || cur !== account.pass){ msgEl.textContent = t.changePassWrongCurrent; msgEl.className = 'settings-msg error'; return; }
+  if(!isValidPassword(p1)){ msgEl.textContent = t.changePassInvalid; msgEl.className = 'settings-msg error'; return; }
+  if(p1 !== p2){ msgEl.textContent = t.changePassMismatch; msgEl.className = 'settings-msg error'; return; }
+  account.pass = p1;
+  localStorage.setItem(AUTH_KEY, JSON.stringify(account));
+  msgEl.textContent = t.changePassSuccess; msgEl.className = 'settings-msg success';
+  document.getElementById('curPassInput').value = '';
+  document.getElementById('newPassInput').value = '';
+  document.getElementById('newPassConfirmInput').value = '';
+});
+
+// ---------- Calculator (Scientific) ----------
+const calcOverlay = document.getElementById('calcOverlay');
+const calcDisplay = document.getElementById('calcDisplay');
+const calcPreview = document.getElementById('calcPreview');
+const calcAngleModeBtn = document.getElementById('calcAngleModeBtn');
+const calcSciToggleBtn = document.getElementById('calcSciToggleBtn');
+const calcSciPanel = document.getElementById('calcSciPanel');
+let calcExpr = '';
+let calcAngleMode = 'deg'; // 'deg' or 'rad'
+
+function calcSanitize(expr){
+  // Only allow digits, operators, parentheses, decimal point, percent, π and e — nothing else ever reaches eval.
+  return /^[0-9+\-*/.%()^πe\s]*$/.test(expr);
+}
+
+function calcToJs(expr){
+  return expr.replace(/%/g, '/100').replace(/π/g, 'Math.PI').replace(/e/g, 'Math.E').replace(/\^/g, '**');
+}
+
+function calcLivePreview(){
+  if(!calcPreview) return;
+  // Only preview once there's a real expression (at least one operator) so we don't
+  // just echo back a lone number as its own "result".
+  if(!calcExpr || !/[+\-*/%^]/.test(calcExpr.slice(0, -1)) || !calcSanitize(calcExpr)){
+    calcPreview.innerHTML = '&nbsp;';
+    return;
+  }
+  // Trailing operator/dot means the expression isn't evaluable yet — show nothing rather than an error.
+  if(/[+\-*/.^]$/.test(calcExpr)){
+    calcPreview.innerHTML = '&nbsp;';
+    return;
+  }
+  try{
+    const safeExpr = calcToJs(calcExpr);
+    const result = Function('"use strict"; return (' + safeExpr + ')')();
+    calcPreview.textContent = Number.isFinite(result) ? ('= ' + String(Math.round(result * 100000) / 100000)) : '\u00A0';
+  }catch(e){
+    calcPreview.innerHTML = '&nbsp;';
+  }
+}
+
+function calcRender(){
+  calcDisplay.textContent = calcExpr === '' ? '0' : calcExpr;
+  calcLivePreview();
+}
+
+function calcApplyUnary(fn){
+  if(!calcExpr || !calcSanitize(calcExpr)) return;
+  try{
+    const safeExpr = calcToJs(calcExpr);
+    const val = Function('"use strict"; return (' + safeExpr + ')')();
+    if(!Number.isFinite(val)){ calcExpr = ''; calcRender(); return; }
+    const toRad = (n)=> calcAngleMode === 'deg' ? n * Math.PI / 180 : n;
+    let result;
+    switch(fn){
+      case 'sin': result = Math.sin(toRad(val)); break;
+      case 'cos': result = Math.cos(toRad(val)); break;
+      case 'tan': result = Math.tan(toRad(val)); break;
+      case 'log': result = Math.log10(val); break;
+      case 'ln': result = Math.log(val); break;
+      case 'sqrt': result = Math.sqrt(val); break;
+      case 'inv': result = 1 / val; break;
+      default: result = val;
+    }
+    calcExpr = Number.isFinite(result) ? String(Math.round(result * 100000000) / 100000000) : '';
+  }catch(e){ calcExpr = ''; }
+  calcRender();
+}
+
+function calcHandle(key){
+  if(key === 'clear'){ calcExpr = ''; calcRender(); return; }
+  if(key === 'back'){ calcExpr = calcExpr.slice(0, -1); calcRender(); return; }
+  if(['sin','cos','tan','log','ln','sqrt','inv'].includes(key)){ calcApplyUnary(key); return; }
+  if(key === 'pi'){ calcExpr += 'π'; calcRender(); return; }
+  if(key === '='){
+    if(!calcExpr || !calcSanitize(calcExpr)) return;
+    try{
+      const safeExpr = calcToJs(calcExpr);
+      // eslint-disable-next-line no-new-func
+      const result = Function('"use strict"; return (' + safeExpr + ')')();
+      calcExpr = (Number.isFinite(result)) ? String(Math.round(result * 100000) / 100000) : '';
+    }catch(e){ calcExpr = ''; }
+    calcRender();
+    return;
+  }
+  calcExpr += key;
+  calcRender();
+}
+
+document.querySelectorAll('.calc-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=> calcHandle(btn.dataset.calc));
+});
+
+if(calcAngleModeBtn){
+  calcAngleModeBtn.addEventListener('click', ()=>{
+    calcAngleMode = calcAngleMode === 'deg' ? 'rad' : 'deg';
+    calcAngleModeBtn.textContent = calcAngleMode.toUpperCase();
+  });
+}
+
+if(calcSciToggleBtn && calcSciPanel){
+  calcSciToggleBtn.addEventListener('click', ()=>{
+    const isOpen = calcSciPanel.classList.toggle('open');
+    calcSciToggleBtn.textContent = isOpen ? 'Scientific ▴' : 'Scientific ▾';
+  });
+}
+
+document.getElementById('openCalcBtn').addEventListener('click', ()=>{
+  calcExpr = '';
+  calcRender();
+  if(calcSciPanel){ calcSciPanel.classList.remove('open'); }
+  if(calcSciToggleBtn){ calcSciToggleBtn.textContent = 'Scientific ▾'; }
+  calcOverlay.style.display = 'flex';
+});
+document.getElementById('calcCloseBtn').addEventListener('click', ()=>{
+  calcOverlay.style.display = 'none';
+});
+// ---------- End Calculator ----------
+
+// ---------- History (previous months) ----------
+function renderHistoryList(){
+  const listEl = document.getElementById('historyList');
+  if(!listEl) return;
+  const t = T();
+  const entries = [];
+  for(let i=0;i<localStorage.length;i++){
+    const key = localStorage.key(i);
+    const m = key && key.match(/^ot-statement-v8:(\d{4})-(\d{2})$/);
+    if(m){
+      try{
+        const val = JSON.parse(localStorage.getItem(key));
+        const hasData = Array.isArray(val) && val.some(d => (d.ot && d.ot > 0) || (d.statuses && d.statuses.length > 0));
+        if(hasData) entries.push({y:parseInt(m[1]), m:parseInt(m[2])});
+      }catch(e){}
+    }
+  }
+  entries.sort((a,b)=> (b.y - a.y) || (b.m - a.m));
+  listEl.innerHTML = '';
+  if(entries.length === 0){
+    listEl.innerHTML = `<div class="history-empty">${t.historyEmpty}</div>`;
+    return;
+  }
+  entries.forEach(e=>{
+    const row = document.createElement('div');
+    row.className = 'history-item';
+    row.innerHTML = `<span>${monthNames[e.m-1]} ${e.y}</span><button type="button">${t.historyLoadBtn}</button>`;
+    row.querySelector('button').addEventListener('click', ()=>{
+      yearInput.value = e.y;
+      setMonthValue(e.m);
+      loadMonth();
+      settingsOverlay.classList.remove('open');
+    });
+    listEl.appendChild(row);
+  });
+}
+
+// Decide initial screen (called at the very end of this script, once everything else is defined)
+function initAuth(){
+  applyTheme(currentTheme);
+  applyLanguage(currentLang);
+  const account = getAccount();
+  const session = localStorage.getItem(AUTH_SESSION_KEY);
+  if(account && session === '1'){
+    showApp();
+  } else {
+    showAuthScreen();
+  }
+}
+// ---------- End Login / Auth System ----------
+
+const monthSelect = document.getElementById('monthSelect');
+const yearInput = document.getElementById('yearInput');
+const dayRowsEl = document.getElementById('dayRows');
+const statusMsg = document.getElementById('statusMsg');
+
+const modalOverlay = document.getElementById('customModalOverlay');
+const modalMsg = document.getElementById('modalMsg');
+const modalCancelBtn = document.getElementById('modalCancelBtn');
+const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+
+const reminderEnabled = document.getElementById('reminderEnabled');
+const reminderTime = document.getElementById('reminderTime');
+const reminderTestBtn = document.getElementById('reminderTestBtn');
+const reminderNote = document.getElementById('reminderNote');
+const alarmModalOverlay = document.getElementById('alarmModalOverlay');
+const alarmSnoozeBtn = document.getElementById('alarmSnoozeBtn');
+const alarmDismissBtn = document.getElementById('alarmDismissBtn');
+
+let isPdfExported = false; 
+let pendingConfirmCallback = null;
+let pendingCancelCallback = null;
+
+// Initial setup
+const currentDate = new Date();
+const monthDropdown = document.getElementById('monthDropdown');
+const monthDropdownBtn = document.getElementById('monthDropdownBtn');
+const monthDropdownLabel = document.getElementById('monthDropdownLabel');
+const monthDropdownList = document.getElementById('monthDropdownList');
+
+monthNames.forEach((m,i)=>{
+  const opt = document.createElement('option');
+  opt.value = i+1; opt.textContent = m;
+  monthSelect.appendChild(opt);
+
+  const item = document.createElement('div');
+  item.className = 'mp-dropdown-item';
+  item.textContent = m;
+  item.dataset.value = i+1;
+  item.addEventListener('click', ()=>{
+    setMonthValue(i+1);
+    monthSelect.dispatchEvent(new Event('change'));
+    monthDropdown.classList.remove('open');
+  });
+  monthDropdownList.appendChild(item);
+});
+
+function syncMonthDropdownUI(){
+  const val = parseInt(monthSelect.value);
+  if(monthDropdownLabel) monthDropdownLabel.textContent = monthNames[val-1] || '';
+  monthDropdownList.querySelectorAll('.mp-dropdown-item').forEach(it=>{
+    it.classList.toggle('active', parseInt(it.dataset.value) === val);
+  });
+}
+function setMonthValue(m){
+  monthSelect.value = m;
+  syncMonthDropdownUI();
+}
+
+monthDropdownBtn.addEventListener('click', ()=>{
+  monthDropdown.classList.toggle('open');
+});
+document.addEventListener('click', (e)=>{
+  if(!monthDropdown.contains(e.target)) monthDropdown.classList.remove('open');
+});
+
+setMonthValue(currentDate.getMonth() + 1);
+yearInput.value = currentDate.getFullYear();
+
+function pad(n){return n.toString().padStart(2,'0');}
+function daysInMonth(y,m){return new Date(y, m, 0).getDate();}
+function storageKey(y,m){return `ot-statement-v8:${y}-${pad(m)}`;}
+function fmtAmount(n){
+  return n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+// Custom Modal Trigger
+function triggerCustomConfirm(msg, onConfirm, onCancel){
+  modalMsg.textContent = msg;
+  pendingConfirmCallback = onConfirm;
+  pendingCancelCallback = onCancel || null;
+  modalOverlay.style.display = 'flex';
+}
+
+modalCancelBtn.onclick = () => {
+  if(pendingCancelCallback) pendingCancelCallback();
+  modalOverlay.style.display = 'none';
+  pendingConfirmCallback = null;
+  pendingCancelCallback = null;
+};
+
+modalConfirmBtn.onclick = () => {
+  if(pendingConfirmCallback) pendingConfirmCallback();
+  modalOverlay.style.display = 'none';
+  pendingConfirmCallback = null;
+  pendingCancelCallback = null;
+};
+
+// Row background: every distinct combination gets its own single, solid,
+// clearly-contrasting color — no gradients/splits, no mixing multiple hues.
+// Night alone = violet, Off Duty alone = blue, Off Day alone = red (lighter),
+// and Night+Off Duty together = amber/orange — a fourth color far from the
+// other three on the color wheel so the combo never looks close to any single state.
+function getRowBackgroundColor(statuses, isWeekend, isEven) {
+  if (!statuses || statuses.length === 0) {
+    if (isWeekend) return 'var(--weekend-bg)';
+    return isEven ? 'var(--zebra)' : 'transparent';
+  }
+
+  const hasNight = statuses.includes('night');
+  const hasDuty = statuses.includes('duty');
+  const hasDayoff = statuses.includes('dayoff');
+
+  if (hasNight && hasDuty) {
+    // Combo state: solid amber — distinct from violet, blue, and red.
+    return 'rgba(217, 119, 6, 0.55)';
+  }
+  if (hasDayoff) {
+    // On a weekend, Day Off keeps the weekend's own green — it never overrides it.
+    // On a weekday, Day Off still shows its usual lightened red.
+    return isWeekend ? 'var(--weekend-bg)' : 'rgba(239, 68, 68, 0.42)';
+  }
+  if (hasNight) {
+    return 'rgba(124, 58, 237, 0.5)';
+  }
+  if (hasDuty) {
+    return 'rgba(2, 132, 199, 0.5)';
+  }
+  return isWeekend ? 'var(--weekend-bg)' : (isEven ? 'var(--zebra)' : 'transparent');
+}
+
+function updateRowVisual(row){
+  const statuses = JSON.parse(row.dataset.statuses || '[]');
+  const isWeekend = row.classList.contains('weekend');
+  const isEven = (parseInt(row.dataset.idx) % 2) === 1;
+  
+  row.querySelectorAll('.status-box').forEach(b=>{
+    b.classList.toggle('active', statuses.includes(b.dataset.type));
+  });
+
+  row.style.background = getRowBackgroundColor(statuses, isWeekend, isEven);
+  // Darker marked rows need light, high-contrast text — toggle a class rather than fighting inline styles.
+  row.classList.toggle('is-marked', statuses.length > 0);
+}
+
+function onStatusBoxClick(e){
+  const box = e.currentTarget;
+  const idx = box.dataset.idx;
+  const type = box.dataset.type;
+  const row = dayRowsEl.querySelector(`.day-row[data-idx="${idx}"]`);
+  
+  let statuses = JSON.parse(row.dataset.statuses || '[]');
+  
+  if(statuses.includes(type)){
+    // Unmarking an already-active box always just requires the unmark confirmation.
+    triggerCustomConfirm(T().unmarkConfirmMsg, () => {
+      statuses = statuses.filter(s => s !== type);
+      row.dataset.statuses = JSON.stringify(statuses);
+      updateRowVisual(row);
+      recalc();
+      autoSave();
+    });
+    return;
+  }
+
+  // Marking a new box: OFF DAY is mutually exclusive with NIGHT DUTY / OFF DAY DUTY.
+  if(type === 'dayoff'){
+    if(statuses.includes('night') || statuses.includes('duty')){
+      showStatus(T().dayoffBlockedMsg, 'error');
+      return;
+    }
+    statuses = ['dayoff'];
+  } else {
+    // type is 'night' or 'duty'
+    if(statuses.includes('dayoff')){
+      showStatus(T().dayoffBlockedMsg, 'error');
+      return;
+    }
+    statuses.push(type);
+  }
+
+  row.dataset.statuses = JSON.stringify(statuses);
+  updateRowVisual(row);
+  recalc();
+  autoSave();
+}
+
+function buildRows(y,m){
+  const dcount = daysInMonth(y,m);
+  dayRowsEl.innerHTML = '';
+  for(let d=1; d<=dcount; d++){
+    const dateObj = new Date(y, m-1, d);
+    const wd = dateObj.getDay();
+    const isWeekend = (wd === 4 || wd === 5); 
+    
+    const row = document.createElement('div');
+    row.className = 'day-row' + (isWeekend ? ' weekend' : '');
+    row.dataset.idx = d-1;
+    row.dataset.statuses = JSON.stringify([]);
+    
+    const dateStr = `${pad(d)}.${pad(m)}.${y}`;
+    
+    row.innerHTML = `
+      <div class="date-cell">${dateStr} <span class="wd">${weekdayShort[wd]}</span></div>
+      <div><input type="number" min="0" step="0.5" class="ot-input" data-idx="${d-1}"></div>
+      <div class="status-box night" data-idx="${d-1}" data-type="night"></div>
+      <div class="status-box duty" data-idx="${d-1}" data-type="duty"></div>
+      <div class="status-box dayoff" data-idx="${d-1}" data-type="dayoff"></div>
+    `;
+    dayRowsEl.appendChild(row);
+  }
+  
+  dayRowsEl.querySelectorAll('.ot-input').forEach(el=>{
+    el.addEventListener('input', ()=>{
+      recalc();
+      autoSave();
+    });
+  });
+  
+  dayRowsEl.querySelectorAll('.status-box').forEach(el=>{
+    el.addEventListener('click', onStatusBoxClick);
+  });
+}
+
+function collectData(){
+  const rows = dayRowsEl.querySelectorAll('.day-row');
+  const data = [];
+  rows.forEach(row=>{
+    const idx = row.dataset.idx;
+    const ot = parseFloat(document.querySelector(`.ot-input[data-idx="${idx}"]`).value) || 0;
+    const statuses = JSON.parse(row.dataset.statuses || '[]');
+    data.push({ot, statuses});
+  });
+  return data;
+}
+
+function applyData(data){
+  data.forEach((entry,i)=>{
+    const otEl = document.querySelector(`.ot-input[data-idx="${i}"]`);
+    const row = dayRowsEl.querySelector(`.day-row[data-idx="${i}"]`);
+    if(otEl) otEl.value = entry.ot || '';
+    if(row){
+      row.dataset.statuses = JSON.stringify(entry.statuses || []);
+      updateRowVisual(row);
+    }
+  });
+}
+
+function recalc(){
+  const data = collectData();
+  const rateOT = parseFloat(document.getElementById('rateOT').value) || 0;
+  const rateNight = parseFloat(document.getElementById('rateNight').value) || 0;
+  const rateOFF = parseFloat(document.getElementById('rateOFF').value) || 0;
+  const rateGross = parseFloat(document.getElementById('rateGross').value) || 0;
+
+  let totOT=0, totNight=0, totDuty=0, totDayOff=0;
+  data.forEach(r=>{
+    totOT += r.ot;
+    if(r.statuses.includes('night')) totNight++;
+    if(r.statuses.includes('duty')) totDuty++;
+    if(r.statuses.includes('dayoff')) totDayOff++;
+  });
+
+  document.getElementById('totOT').textContent = totOT;
+  document.getElementById('totNight').textContent = totNight;
+  document.getElementById('totDuty').textContent = totDuty;
+  document.getElementById('totDayOff').textContent = totDayOff;
+
+  const totalAmount = (totOT*rateOT) + (totNight*rateNight) + (totDuty*rateOFF) + rateGross;
+  document.getElementById('totalAmt').textContent = fmtAmount(totalAmount);
+  
+  return {data, rateOT, rateNight, rateOFF, rateGross, totOT, totNight, totDuty, totDayOff, totalAmount};
+}
+
+function autoSave(){
+  const y = parseInt(yearInput.value);
+  const m = parseInt(monthSelect.value);
+  const {data, rateOT, rateNight, rateOFF, rateGross} = recalc();
+  try{
+    localStorage.setItem(storageKey(y,m), JSON.stringify(data));
+    localStorage.setItem('ot-rates-v8', JSON.stringify({rateOT, rateNight, rateOFF, rateGross}));
+  }catch(e){}
+}
+
+function loadMonth(){
+  const y = parseInt(yearInput.value);
+  const m = parseInt(monthSelect.value);
+  buildRows(y,m);
+  isPdfExported = false; 
+  try{
+    const saved = localStorage.getItem(storageKey(y,m));
+    if(saved){
+      applyData(JSON.parse(saved));
+    }
+    const savedRates = localStorage.getItem('ot-rates-v8');
+    if(savedRates){
+      const r = JSON.parse(savedRates);
+      document.getElementById('rateOT').value = r.rateOT;
+      document.getElementById('rateNight').value = r.rateNight;
+      document.getElementById('rateOFF').value = r.rateOFF;
+      document.getElementById('rateGross').value = (r.rateGross || r.rateGross === 0) ? r.rateGross : '';
+    }
+  }catch(e){}
+  ['rateOT','rateNight','rateOFF','rateGross'].forEach(id=>{
+    document.getElementById(id).dataset.prevValue = document.getElementById(id).value;
+  });
+  recalc();
+}
+
+function exportPDF(){
+  const y = parseInt(yearInput.value);
+  const m = parseInt(monthSelect.value);
+  const {data, rateOT, rateNight, rateOFF, rateGross, totOT, totNight, totDuty, totDayOff, totalAmount} = recalc();
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const account = getAccount() || {};
+  const t = T();
+
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(14);
+  const monthTitleCase = monthNames[m-1].charAt(0) + monthNames[m-1].slice(1).toLowerCase();
+  doc.text(`Monthly Duty & OT Statement (${monthTitleCase} ${y})`, 14, 15);
+
+  // Profile photo (if the user has added one) — shown top-right, skipped silently if it fails
+  if(account.photo){
+    try{
+      const fmtMatch = /^data:image\/(png|jpe?g)/i.exec(account.photo);
+      const imgFormat = fmtMatch ? fmtMatch[1].toUpperCase().replace('JPG','JPEG') : 'JPEG';
+      doc.addImage(account.photo, imgFormat, 172, 10, 24, 24, undefined, 'FAST');
+    }catch(e){ /* unsupported image type — ignore, rest of the PDF still renders */ }
+  }
+
+  // Company / employee info header
+  doc.setFontSize(9.5);
+  doc.setFont('helvetica','normal');
+  let infoY = 23;
+  const infoLineHeight = 5;
+  if(account.name){
+    doc.setFont('helvetica','bold');
+    doc.text(`${t.pdfNameLabel}: ${account.name}`, 14, infoY);
+    doc.setFont('helvetica','normal');
+    infoY += infoLineHeight;
+  }
+  if(account.user){
+    doc.text(`${t.pdfIdLabel}: ${account.user}`, 14, infoY);
+    infoY += infoLineHeight;
+  }
+  if(account.companyName){
+    doc.text(`${t.pdfCompanyLabel}: ${account.companyName}`, 14, infoY);
+    infoY += infoLineHeight;
+  }
+  if(account.companyAddress){
+    doc.text(`${t.pdfAddressLabel}: ${account.companyAddress}`, 14, infoY);
+    infoY += infoLineHeight;
+  }
+  infoY += 2;
+
+  const body = data.map((row,i)=>{
+    const dateStr = `${pad(i+1)}.${pad(m)}.${y}`;
+    return [
+      dateStr,
+      row.ot || '-',
+      row.statuses.includes('night') ? 'Yes' : '-',
+      row.statuses.includes('duty') ? 'Yes' : '-',
+      row.statuses.includes('dayoff') ? 'Yes' : '-'
+    ];
+  });
+
+  doc.autoTable({
+    startY: infoY,
+    head: [['DATE','OT (H)','NIGHT DUTY','OFF DAY DUTY','OFF DAY']],
+    body: body,
+    theme: 'grid',
+    headStyles: {fillColor:[79,70,229], textColor:255, fontStyle:'bold'},
+    styles: {fontSize:8.5, halign:'center'},
+  });
+
+  let finalY = doc.lastAutoTable.finalY + 8;
+  doc.autoTable({
+    startY: finalY,
+    head: [['SUMMARY','OT (H)','NIGHT DUTY','OFF DAY DUTY','OFF DAY']],
+    body: [
+      ['Total', totOT, totNight, totDuty, totDayOff],
+      ['Rate', rateOT, rateNight, rateOFF, '-'],
+      ['Amount', fmtAmount(totOT*rateOT), fmtAmount(totNight*rateNight), fmtAmount(totDuty*rateOFF), '-']
+    ],
+    theme: 'grid',
+    styles: {fontSize:8.5, halign:'center', fontStyle:'bold'},
+  });
+
+  finalY = doc.lastAutoTable.finalY + 8;
+  if(rateGross){
+    doc.setFontSize(10);
+    doc.text(`${t.pdfGrossLabel}: ${fmtAmount(rateGross)}`, 14, finalY);
+    finalY += 8;
+  }
+
+  doc.setFontSize(13);
+  doc.text(`Total Amount: ${fmtAmount(totalAmount)}`, 14, finalY);
+
+  const fileName = `Duty_OT_Statement_${monthNames[m-1]}_${y}.pdf`;
+  const blobUrl = doc.output('bloburl');
+
+  const frame = document.getElementById('exportPreviewFrame');
+  const downloadBtn = document.getElementById('exportDownloadBtn');
+  const fallback = document.getElementById('exportFallback');
+  const fallbackOpenBtn = document.getElementById('exportFallbackOpenBtn');
+
+  downloadBtn.href = blobUrl;
+  downloadBtn.setAttribute('download', fileName);
+  fallbackOpenBtn.href = blobUrl;
+
+  // Most mobile browsers (iOS Safari, Android Chrome/WebView) cannot render a
+  // PDF inside an <iframe> — it just shows a blank frame with no error event.
+  // So on mobile we skip the iframe entirely and show the "Open PDF" fallback,
+  // which reliably works since it hands the PDF to the OS/browser's native viewer.
+  const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+
+  fallback.classList.remove('show');
+  frame.style.display = 'block';
+
+  if(isMobile){
+    frame.style.display = 'none';
+    fallback.classList.add('show');
+    frame.src = 'about:blank';
+  } else {
+    let loaded = false;
+    frame.onload = () => { loaded = true; };
+    frame.src = blobUrl;
+    // If the desktop iframe still hasn't rendered shortly after, fall back too.
+    setTimeout(()=>{
+      if(!loaded){
+        frame.style.display = 'none';
+        fallback.classList.add('show');
+      }
+    }, 1200);
+  }
+
+  document.getElementById('exportPreviewOverlay').style.display = 'flex';
+
+  isPdfExported = true;
+  showStatus(T().statusPdfDownloaded, 'success');
+}
+
+function handleReset(){
+  if(!isPdfExported){
+    triggerCustomConfirm(T().resetNoPdfConfirmMsg, () => {
+      resetCurrentMonthData();
+    });
+    return;
+  }
+
+  triggerCustomConfirm(T().resetConfirmMsg, () => {
+    resetCurrentMonthData();
+  });
+}
+
+function resetCurrentMonthData(){
+  const y = parseInt(yearInput.value);
+  const m = parseInt(monthSelect.value);
+  
+  localStorage.removeItem(storageKey(y,m));
+  buildRows(y,m);
+  recalc();
+  
+  isPdfExported = false; 
+  showStatus(T().statusDataReset, 'success');
+}
+
+function showStatus(msg, type){
+  statusMsg.textContent = msg;
+  statusMsg.className = 'status ' + type;
+  setTimeout(()=>{
+    statusMsg.textContent = '';
+    statusMsg.className = 'status';
+  }, 3500);
+}
+
+const rateLabelKeys = {rateOT:'rateOTLabel', rateNight:'rateNightLabel', rateOFF:'rateOFFLabel', rateGross:'rateGrossLabel'};
+
+function setupRateConfirm(id){
+  const el = document.getElementById(id);
+  el.dataset.prevValue = el.value;
+  el.addEventListener('focus', ()=>{ el.dataset.prevValue = el.value; });
+  el.addEventListener('change', ()=>{
+    const prev = el.dataset.prevValue;
+    const next = el.value;
+    if(next === prev){ return; }
+    triggerCustomConfirm(
+      T().rateChangeConfirm(T()[rateLabelKeys[id]], prev, next),
+      () => {
+        el.dataset.prevValue = next;
+        recalc();
+        autoSave();
+      },
+      () => {
+        el.value = prev;
+      }
+    );
+  });
+}
+
+['rateOT','rateNight','rateOFF','rateGross'].forEach(setupRateConfirm);
+
+monthSelect.addEventListener('change', loadMonth);
+yearInput.addEventListener('change', loadMonth);
+document.getElementById('pdfBtn').addEventListener('click', exportPDF);
+
+function closeExportPreview(){
+  const overlay = document.getElementById('exportPreviewOverlay');
+  const frame = document.getElementById('exportPreviewFrame');
+  const fallback = document.getElementById('exportFallback');
+  overlay.style.display = 'none';
+  frame.src = 'about:blank';
+  frame.style.display = 'block';
+  fallback.classList.remove('show');
+}
+document.getElementById('exportPreviewCloseBtn').addEventListener('click', closeExportPreview);
+document.getElementById('exportPreviewCloseX').addEventListener('click', closeExportPreview);
+document.getElementById('resetBtn').addEventListener('click', handleReset);
+
+// ---------- Daily Entry Reminder / Alarm ----------
+const REMINDER_KEY = 'ot-reminder-v1';
+const REMINDER_LAST_FIRED_KEY = 'ot-reminder-last-fired';
+let snoozeUntil = null;
+
+function loadReminderSettings(){
+  try{
+    const saved = JSON.parse(localStorage.getItem(REMINDER_KEY) || 'null');
+    if(saved){
+      reminderEnabled.checked = !!saved.enabled;
+      if(saved.time) reminderTime.value = saved.time;
+    }
+  }catch(e){}
+  updateReminderNote();
+}
+
+function saveReminderSettings(){
+  localStorage.setItem(REMINDER_KEY, JSON.stringify({
+    enabled: reminderEnabled.checked,
+    time: reminderTime.value
+  }));
+}
+
+function updateReminderNote(){
+  if(reminderEnabled.checked){
+    reminderNote.textContent = T().reminderNoteOn(reminderTime.value);
+  } else {
+    reminderNote.textContent = T().reminderNoteOff;
+  }
+}
+
+function playAlarmBeep(){
+  try{
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    let t = ctx.currentTime;
+    for(let i=0;i<4;i++){
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = 880;
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(0.3, t + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.28);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.3);
+      t += 0.4;
+    }
+  }catch(e){}
+}
+
+function fireAlarm(){
+  playAlarmBeep();
+  alarmModalOverlay.style.display = 'flex';
+  if('Notification' in window && Notification.permission === 'granted'){
+    try{
+      new Notification('⏰ ENTRY REMINDER', {
+        body: 'আজকের ডিউটি / OT এন্ট্রি দেওয়ার সময় হয়েছে!',
+      });
+    }catch(e){}
+  }
+}
+
+function todayStr(){
+  const d = new Date();
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+
+function checkReminderTick(){
+  if(!reminderEnabled.checked) return;
+  const now = new Date();
+  if(snoozeUntil){
+    if(now >= snoozeUntil){ snoozeUntil = null; fireAlarm(); }
+    return;
+  }
+
+  const nowMinutes = now.getHours()*60 + now.getMinutes();
+  const [rh, rm] = (reminderTime.value || '00:00').split(':').map(Number);
+  const targetMinutes = rh*60 + rm;
+  const lastFired = localStorage.getItem(REMINDER_LAST_FIRED_KEY);
+
+  // Fires at the set time, or "catches up" if the tab was backgrounded/locked
+  // and the exact minute was missed (still fires the same day, once).
+  if(nowMinutes >= targetMinutes && lastFired !== todayStr()){
+    localStorage.setItem(REMINDER_LAST_FIRED_KEY, todayStr());
+    fireAlarm();
+  }
+}
+
+reminderEnabled.addEventListener('change', ()=>{
+  if(reminderEnabled.checked && 'Notification' in window && Notification.permission === 'default'){
+    Notification.requestPermission();
+  }
+  saveReminderSettings();
+  updateReminderNote();
+});
+
+reminderTime.addEventListener('change', ()=>{
+  saveReminderSettings();
+  updateReminderNote();
+});
+
+reminderTestBtn.addEventListener('click', ()=>{
+  fireAlarm();
+});
+
+alarmDismissBtn.addEventListener('click', ()=>{
+  alarmModalOverlay.style.display = 'none';
+});
+
+alarmSnoozeBtn.addEventListener('click', ()=>{
+  alarmModalOverlay.style.display = 'none';
+  snoozeUntil = new Date(Date.now() + 10*60*1000);
+});
+
+loadReminderSettings();
+setInterval(checkReminderTick, 5000);
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState === 'visible') checkReminderTick();
+});
+window.addEventListener('focus', checkReminderTick);
+// ---------- End Reminder / Alarm ----------
+
+// ---------- App Update Check ----------
+// Current version of THIS file. Bump this every time you release a new version.
+const APP_VERSION = '1.0.0';
+
+// Set this to a URL that returns JSON like:
+// {"version":"1.0.1","url":"https://your-hosted-link/Monthly_Duty_OT_Record.html","notes":"Bug fixes"}
+// A GitHub raw file or Gist raw link works well (supports cross-origin fetch).
+// Leave as '' to disable update checking.
+const UPDATE_CHECK_URL = '';
+
+const UPDATE_DISMISSED_KEY = 'ot-update-dismissed-version';
+
+const updateModalOverlay = document.getElementById('updateModalOverlay');
+const updateModalVersion = document.getElementById('updateModalVersion');
+const updateModalNotes = document.getElementById('updateModalNotes');
+const updateLaterBtn = document.getElementById('updateLaterBtn');
+const updateDownloadBtn = document.getElementById('updateDownloadBtn');
+const appVersionLabel = document.getElementById('appVersionLabel');
+const checkUpdateBtn = document.getElementById('checkUpdateBtn');
+const versionStatus = document.getElementById('versionStatus');
+
+appVersionLabel.textContent = `Version ${APP_VERSION}`;
+const copyrightTagEl = document.getElementById('copyrightTag');
+if(copyrightTagEl) copyrightTagEl.textContent = `© ${new Date().getFullYear()} S-Matrix-Ltd. All rights reserved.`;
+
+function isNewerVersion(current, incoming){
+  const a = current.split('.').map(n=>parseInt(n,10)||0);
+  const b = incoming.split('.').map(n=>parseInt(n,10)||0);
+  for(let i=0;i<Math.max(a.length,b.length);i++){
+    const x = a[i]||0, y = b[i]||0;
+    if(y > x) return true;
+    if(y < x) return false;
+  }
+  return false;
+}
+
+function showUpdatePopup(info){
+  updateModalVersion.textContent = info.version;
+  updateModalNotes.textContent = info.notes || '';
+  updateDownloadBtn.onclick = ()=>{
+    if(info.url) window.open(info.url, '_blank');
+    updateModalOverlay.style.display = 'none';
+  };
+  updateModalOverlay.style.display = 'flex';
+}
+
+function checkForUpdate(isManualCheck){
+  if(!UPDATE_CHECK_URL){
+    if(isManualCheck) versionStatus.textContent = T().versionNotSet;
+    return;
+  }
+  versionStatus.textContent = T().versionChecking;
+  fetch(UPDATE_CHECK_URL + (UPDATE_CHECK_URL.includes('?') ? '&' : '?') + 't=' + Date.now())
+    .then(r=>r.json())
+    .then(info=>{
+      if(info && info.version && isNewerVersion(APP_VERSION, info.version)){
+        versionStatus.textContent = T().versionFoundNew(info.version);
+        const dismissed = localStorage.getItem(UPDATE_DISMISSED_KEY);
+        if(isManualCheck || dismissed !== info.version){
+          showUpdatePopup(info);
+        }
+      } else {
+        versionStatus.textContent = T().versionLatest;
+      }
+    })
+    .catch(()=>{
+      versionStatus.textContent = T().versionCheckFailed;
+    });
+}
+
+checkUpdateBtn.addEventListener('click', ()=> checkForUpdate(true));
+
+updateLaterBtn.addEventListener('click', ()=>{
+  localStorage.setItem(UPDATE_DISMISSED_KEY, updateModalVersion.textContent);
+  updateModalOverlay.style.display = 'none';
+});
+// ---------- End App Update Check ----------
+
+loadMonth();
+initAuth();
+</script>
+
+<script>
+let deferredPrompt;
+
+window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+
+    const btn = document.getElementById("installAppBtn");
+    if (btn) {
+        btn.style.display = "block";
+    }
+});
+
+async function installApp() {
+    if (!deferredPrompt) return;
+
+    deferredPrompt.prompt();
+
+    const result = await deferredPrompt.userChoice;
+
+    if (result.outcome === "accepted") {
+        console.log("App Installed");
+    }
+
+    deferredPrompt = null;
+
+    const btn = document.getElementById("installAppBtn");
+    if (btn) {
+        btn.style.display = "none";
+    }
+}
+</script>
+
+<script>
+if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+        navigator.serviceWorker
+            .register("./service-worker.js")
+            .then(reg => console.log("Service Worker Registered:", reg.scope))
+            .catch(err => console.error("Service Worker Error:", err));
+    });
+}
+</script>
+
+<button id="installAppBtn"
+onclick="installApp()"
+style="
+display:none;
+position:fixed;
+bottom:20px;
+right:20px;
+z-index:9999;
+background:#1976d2;
+color:#fff;
+border:none;
+padding:12px 18px;
+border-radius:30px;
+font-size:16px;
+font-weight:bold;
+box-shadow:0 4px 12px rgba(0,0,0,.25);
+cursor:pointer;">
+📲 Install App
+</button>
+
+</body>
+</html>
