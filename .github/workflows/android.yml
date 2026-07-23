@@ -40,7 +40,7 @@ jobs:
             fs.writeFileSync('www/index.html', html);
           "
           
-          # Create/Update version.json with same version
+          # Create version.json
           cat << JSON > version.json
           {
             "version": "$NEW_VERSION",
@@ -64,11 +64,6 @@ jobs:
 
       - name: Sync Capacitor
         run: npx cap sync android
-
-      - name: Setup Fixed Debug Keystore
-        run: |
-          mkdir -p android/app
-          keytool -genkey -v -keystore android/app/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
 
       - name: Build Android APK
         run: |
