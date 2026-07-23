@@ -1,6 +1,8 @@
 {
+  "id": "/",
   "name": "Monthly Duty & OT Statement",
   "short_name": "Duty OT",
+  "lang": "en"
   "description": "Monthly Duty & OT Statement",
   "start_url": "./",
   "scope": "./",
@@ -21,3 +23,4 @@
     }
   ]
 }
+
