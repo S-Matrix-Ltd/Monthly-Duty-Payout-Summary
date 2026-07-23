@@ -28,6 +28,11 @@ jobs:
 
     - name: Build Web Assets
       run: npm run build --if-present
+    - name: Install Capacitor Assets Tool
+      run: npm install @capacitor/assets --save-dev
+
+    - name: Generate App Icons and Splash Screen
+      run: npx capacitor-assets generate --iconAsset icon-512.png
 
     - name: Sync Capacitor
       run: npx cap sync android
