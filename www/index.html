@@ -2123,27 +2123,56 @@ function loadMonth(){
   recalc();
 }
 
+
 function exportPDF(){
-  const y = parseInt(yearInput.value);
-  const m = parseInt(monthSelect.value);
-  const {data, rateOT, rateNight, rateOFF, rateGross, totOT, totNight, totDuty, totDayOff, totalAmount} = recalc();
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  const account = getAccount() || {};
-  const t = T();
+  try {
+    const y = parseInt(yearInput.value);
+    const m = parseInt(monthSelect.value);
+    const {data, rateOT, rateNight, rateOFF, rateGross, totOT, totNight, totDuty, totDayOff, totalAmount} = recalc();
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const account = getAccount() || {};
+    const t = T();
 
-  doc.setFont('helvetica','bold');
-  doc.setFontSize(14);
-  const monthTitleCase = monthNames[m-1].charAt(0) + monthNames[m-1].slice(1).toLowerCase();
-  doc.text(`Monthly Duty & OT Statement (${monthTitleCase} ${y})`, 14, 15);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    const monthTitleCase = monthNames[m-1].charAt(0) + monthNames[m-1].slice(1).toLowerCase();
+    doc.text("Monthly Duty & OT Statement (" + monthTitleCase + " " + y + ")", 14, 15);
 
-  // Profile photo (if the user has added one) — shown top-right, skipped silently if it fails
-  if(account.photo){
-    try{
-      const fmtMatch = /^data:image\/(png|jpe?g)/i.exec(account.photo);
-      const imgFormat = fmtMatch ? fmtMatch[1].toUpperCase().replace('JPG','JPEG') : 'JPEG';
-      doc.addImage(account.photo, imgFormat, 172, 10, 24, 24, undefined, 'FAST');
-    }catch(e){ /* unsupported image type — ignore, rest of the PDF still renders */ }
+    if (doc.autoTable) {
+      doc.autoTable({
+        startY: 25,
+        head: [["Date", "Duty Type", "OT Hrs", "Night", "Off Duty"]],
+        body: data.map(r => [r.date, r.type || "-", r.ot || "0", r.night ? "Yes" : "No", r.off ? "Yes" : "No"])
+      });
+    }
+
+    // Android Native Direct Print & Save Stream Bridge
+    const pdfDataUri = doc.output("datauristring");
+    const printWin = window.open("", "_blank");
+    if (printWin) {
+      printWin.document.write("<iframe width='100%' height='100%' src='" + pdfDataUri + "' style='border:none;'></iframe>");
+      setTimeout(() => { printWin.print(); }, 500);
+    } else {
+      // Fallback iframe print stream
+      let iframe = document.getElementById("pdfPrintIframe");
+      if (!iframe) {
+        iframe = document.createElement("iframe");
+        iframe.id = "pdfPrintIframe";
+        iframe.style.display = "none";
+        document.body.appendChild(iframe);
+      }
+      iframe.src = pdfDataUri;
+      setTimeout(() => {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+      }, 500);
+    }
+  } catch (err) {
+    alert("PDF Error: " + err.message);
+  }
+}
+
   }
 
   // Company / employee info header
