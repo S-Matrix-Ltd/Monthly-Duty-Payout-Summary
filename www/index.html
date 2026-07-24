@@ -705,7 +705,27 @@ function downloadPDFDirectly(doc, filename) {
     try { downloadPDFDirectly(doc, filename); } catch(e) { alert("Download failed: " + e.message); }
   }
 }
-</script></head>
+</script>
+<script>
+window.generateNativePDF = function(doc, filename) {
+  try {
+    const string = doc.output("datauristring");
+    const iframe = document.createElement("iframe");
+    iframe.style.display = "none";
+    iframe.src = string;
+    document.body.appendChild(iframe);
+    
+    setTimeout(() => {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+    }, 500);
+  } catch(e) {
+    alert("PDF Render Error: " + e.message);
+  }
+};
+</script>
+
+</head>
 <body>
 
 <!-- Login / Setup Screen -->
