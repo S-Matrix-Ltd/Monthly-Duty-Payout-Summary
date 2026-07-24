@@ -679,7 +679,7 @@ function forceSavePDF(doc, filename) {
       forceSavePDF(doc, filename);
     } else {
       const blob = doc.output("blob");
-      const url = URL.createObjectURL(blob);
+      const url = (blob).output("datauristring");
       const a = document.createElement("a");
       a.href = url;
       a.download = filename;
@@ -689,6 +689,20 @@ function forceSavePDF(doc, filename) {
     }
   } catch(e) {
     forceSavePDF(doc, filename);
+  }
+}
+</script><script>
+function downloadPDFDirectly(doc, filename) {
+  try {
+    const dataUri = doc.output("datauristring");
+    const link = document.createElement("a");
+    link.href = dataUri;
+    link.download = filename || "Duty_Payout_Summary.pdf";
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(() => { document.body.removeChild(link); }, 300);
+  } catch(err) {
+    try { downloadPDFDirectly(doc, filename); } catch(e) { alert("Download failed: " + e.message); }
   }
 }
 </script></head>
